@@ -18,7 +18,10 @@ from pydantic import model_validator
 from typing_extensions import Self
 
 from ..base import AnyModel
+from ..base import Mutability
+from ..base import Returned
 from ..base import SCIM2Model
+from ..base import Uniqueness
 
 
 class Meta(SCIM2Model):
@@ -88,7 +91,9 @@ class Resource(SCIM2Model, Generic[AnyModel]):
     # Common attributes as defined by
     # https://www.rfc-editor.org/rfc/rfc7643#section-3.1
 
-    id: Optional[str] = None
+    id: Annotated[
+        Optional[str], Mutability.read_only, Returned.always, Uniqueness.global_
+    ] = None
     """A unique identifier for a SCIM resource as defined by the service
     provider.
 
@@ -96,11 +101,13 @@ class Resource(SCIM2Model, Generic[AnyModel]):
     resource creation or replacement requests.
     """
 
-    external_id: Optional[str] = None
+    external_id: Annotated[Optional[str], Mutability.read_write, Returned.default] = (
+        None
+    )
     """A String that is an identifier for the resource as defined by the
     provisioning client."""
 
-    meta: Optional[Meta] = None
+    meta: Annotated[Optional[Meta], Mutability.read_only, Returned.default] = None
     """A complex attribute containing resource metadata."""
 
     def __getitem__(self, item: Any):

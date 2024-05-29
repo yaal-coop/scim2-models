@@ -1,11 +1,15 @@
 from enum import Enum
+from typing import Annotated
 from typing import List
 from typing import Optional
 
 from pydantic import AnyUrl
 from pydantic import EmailStr
 
+from ..base import Mutability
+from ..base import Required
 from ..base import SCIM2Model
+from ..base import Uniqueness
 from .group import GroupMember
 from .resource import Resource
 
@@ -211,7 +215,7 @@ class X509Certificate(SCIM2Model):
 
 
 class User(Resource):
-    user_name: Optional[str] = None
+    user_name: Annotated[Optional[str], Uniqueness.server, Required.true] = None
     """Unique identifier for the User, typically used by the user to directly
     authenticate to the service provider."""
 
@@ -257,7 +261,7 @@ class User(Resource):
     active: Optional[bool] = None
     """A Boolean value indicating the User's administrative status."""
 
-    password: Optional[str] = None
+    password: Annotated[Optional[str], Mutability.write_only] = None
     """The User's cleartext password."""
 
     emails: Optional[List[Email]] = None
