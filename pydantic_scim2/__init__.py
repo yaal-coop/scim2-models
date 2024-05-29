@@ -1,6 +1,7 @@
 from .base import Mutability
 from .base import Required
 from .base import Returned
+from .base import SCIM2Model
 from .base import Uniqueness
 from .rfc7643.enterprise_user import EnterpriseUser
 from .rfc7643.enterprise_user import Manager
@@ -94,6 +95,7 @@ __all__ = [
     "ResourceType",
     "Returned",
     "Role",
+    "SCIM2Model",
     "Schema",
     "SchemaExtension",
     "SearchRequest",
