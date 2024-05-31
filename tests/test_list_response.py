@@ -28,7 +28,7 @@ def test_user(load_sample):
 
 
 def test_enterprise_user(load_sample):
-    resource_payload = load_sample("rfc7643-8.3-user-enterprise_user.json")
+    resource_payload = load_sample("rfc7643-8.3-enterprise_user.json")
     payload = {
         "totalResults": 1,
         "itemsPerPage": 10,
@@ -132,8 +132,8 @@ def test_mixed_types_type_missing(load_sample):
     with pytest.raises(ValidationError):
         ListResponse.of(User, Foobar).model_validate(payload)
 
-    # TODO: This should raise a ValidationError
-    ListResponse.of(User).model_validate(payload)
+    with pytest.raises(ValidationError):
+        ListResponse.of(User).model_validate(payload)
 
 
 def test_missing_resource_schema(load_sample):

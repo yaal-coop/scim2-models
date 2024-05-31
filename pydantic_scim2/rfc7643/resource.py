@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 from typing import Any
+from typing import Dict
 from typing import Generic
 from typing import List
 from typing import Optional
@@ -124,23 +125,33 @@ class Resource(SCIM2Model, Generic[AnyModel]):
         schema = item.model_fields["schemas"].default[0]
         setattr(self, schema, value)
 
+    @classmethod
+    def get_extension_models(cls) -> Dict[str, Type]:
+        """Return extension a dict associating extension models with their
+        schemas."""
+        extension_models = cls.__pydantic_generic_metadata__.get("args", [])
+        by_schema = {
+            ext.model_fields["schemas"].default[0]: ext for ext in extension_models
+        }
+        return by_schema
+
     @model_validator(mode="after")
     def load_model_extensions(self) -> Self:
         """Instanciate schema objects if found in the payload."""
 
-        extension_models = self.__pydantic_generic_metadata__.get("args")
-        if not extension_models:
-            return self
-
         main_schema = self.model_fields["schemas"].default[0]
-        by_schema = {
-            ext.model_fields["schemas"].default[0]: ext for ext in extension_models
-        }
+        extension_models = self.get_extension_models()
         for schema in self.schemas:
             if schema == main_schema:
                 continue
 
-            model = by_schema[schema]
+            try:
+                model = extension_models[schema]
+            except KeyError as exc:
+                raise ValueError(
+                    f"No extension model found for schema '{schema}'"
+                ) from exc
+
             if payload := getattr(self, schema, None):
                 setattr(self, schema, model.model_validate(payload))
 

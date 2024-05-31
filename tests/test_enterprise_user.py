@@ -12,7 +12,7 @@ from pydantic_scim2 import User
 
 
 def test_enterprise_user(load_sample):
-    payload = load_sample("rfc7643-8.3-user-enterprise_user.json")
+    payload = load_sample("rfc7643-8.3-enterprise_user.json")
     obj = User[EnterpriseUser].model_validate(payload)
 
     assert obj.schemas == [

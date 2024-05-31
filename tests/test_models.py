@@ -2,6 +2,7 @@ import os
 
 from pydantic_scim2 import BulkRequest
 from pydantic_scim2 import BulkResponse
+from pydantic_scim2 import EnterpriseUser
 from pydantic_scim2 import Error
 from pydantic_scim2 import Group
 from pydantic_scim2 import ListResponse
@@ -17,11 +18,14 @@ def test_parse_and_serialize_examples(load_sample):
     samples = list(os.walk("samples"))[0][2]
     models = {
         "user": User,
+        "enterprise_user": User[EnterpriseUser],
         "group": Group,
         "schema": Schema,
         "resource_type": ResourceType,
         "service_provider_configuration": ServiceProviderConfiguration,
-        "list_response": ListResponse.of(User, Group, Schema, ResourceType),
+        "list_response": ListResponse.of(
+            User[EnterpriseUser], Group, Schema, ResourceType
+        ),
         "patch_op": PatchOp,
         "bulk_request": BulkRequest,
         "bulk_response": BulkResponse,
