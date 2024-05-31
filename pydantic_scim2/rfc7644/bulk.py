@@ -8,7 +8,7 @@ from pydantic import Field
 from pydantic import PlainSerializer
 
 from ..base import SCIM2Model
-from ..base import int_to_str
+from ..utils import int_to_str
 
 
 class BulkOperation(SCIM2Model):

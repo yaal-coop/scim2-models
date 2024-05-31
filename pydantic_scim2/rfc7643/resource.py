@@ -129,11 +129,29 @@ class Resource(SCIM2Model, Generic[AnyModel]):
     def get_extension_models(cls) -> Dict[str, Type]:
         """Return extension a dict associating extension models with their
         schemas."""
+
         extension_models = cls.__pydantic_generic_metadata__.get("args", [])
         by_schema = {
             ext.model_fields["schemas"].default[0]: ext for ext in extension_models
         }
         return by_schema
+
+    @staticmethod
+    def get_by_schema(
+        resource_types: List[Type], schema: str, with_extensions=True
+    ) -> Optional[Type]:
+        """Given a resource type list and a schema, find the matching resource
+        type."""
+
+        by_schema = {
+            resource_type.model_fields["schemas"].default[0]: resource_type
+            for resource_type in (resource_types or [])
+        }
+        if with_extensions:
+            for resource_type in list(by_schema.values()):
+                by_schema.update(**resource_type.get_extension_models())
+
+        return by_schema.get(schema)
 
     @model_validator(mode="after")
     def load_model_extensions(self) -> Self:

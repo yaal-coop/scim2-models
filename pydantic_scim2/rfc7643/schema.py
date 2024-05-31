@@ -70,6 +70,9 @@ class Attribute(SCIM2Model):
 class Schema(SCIM2Model):
     schemas: List[str] = ["urn:ietf:params:scim:schemas:core:2.0:Schema"]
 
+    meta: Annotated[Optional[Meta], Mutability.read_only] = None
+    """A complex attribute containing resource metadata."""
+
     id: Annotated[str, Mutability.read_only]
     """The unique URI of the schema."""
 
@@ -82,6 +85,3 @@ class Schema(SCIM2Model):
     attributes: Annotated[List[Attribute], Mutability.read_only]
     """A complex type that defines service provider attributes and their
     qualities via the following set of sub-attributes."""
-
-    meta: Annotated[Optional[Meta], Mutability.read_only] = None
-    """A complex attribute containing resource metadata."""

@@ -5,7 +5,7 @@ from typing import Optional
 from pydantic import PlainSerializer
 
 from ..base import SCIM2Model
-from ..base import int_to_str
+from ..utils import int_to_str
 
 
 class Error(SCIM2Model):
