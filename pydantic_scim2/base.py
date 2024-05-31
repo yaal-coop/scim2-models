@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
@@ -11,8 +12,12 @@ from typing import get_origin
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic import SerializationInfo
+from pydantic import SerializerFunctionWrapHandler
 from pydantic import ValidationInfo
+from pydantic import field_serializer
 from pydantic import field_validator
+from pydantic import model_serializer
 from pydantic.alias_generators import to_camel
 from pydantic_core import PydanticCustomError
 
@@ -267,6 +272,41 @@ class SCIM2Model(BaseModel):
         return {
             field for field in cls.model_fields if match(field, mutability, returned)
         }
+
+    @field_serializer("*", mode="wrap")
+    def scim_field_serializer(
+        self,
+        value: Any,
+        handler: SerializerFunctionWrapHandler,
+        info: SerializationInfo,
+    ) -> Any:
+        """Serialize the fields according to the mutability and returability
+        indications passed in the serialization context."""
+        value = handler(value)
+
+        if not info.context:
+            return value
+
+        if info.context.get("mutability") and self.get_field_mutability(
+            info.field_name
+        ) not in info.context.get("mutability"):
+            return None
+
+        if info.context.get("returned") and self.get_field_returnability(
+            info.field_name
+        ) not in info.context.get("returned"):
+            return None
+
+        return value
+
+    @model_serializer(mode="wrap")
+    def model_serializer_exclude_none(
+        self, handler, info: SerializationInfo
+    ) -> Dict[str, Any]:
+        """Remove `None` values inserted by the field_serializer."""
+
+        result = handler(self)
+        return {key: value for key, value in result.items() if value is not None}
 
 
 AnyModel = TypeVar("AnyModel", bound=SCIM2Model)
