@@ -4,7 +4,7 @@ Tutorial
 Model parsing
 =============
 
-Pydantic :func:`~pydantic.BaseModel.model_validate` method can be used to parse and validate SCIM2 payloads.
+Pydantic :func:`~pydantic_scim2.BaseModel.model_validate` method can be used to parse and validate SCIM2 payloads.
 Python models have generally the same name than in the SCIM specifications, they are simply snake cased.
 
 
@@ -37,7 +37,7 @@ Python models have generally the same name than in the SCIM specifications, they
 Model serialization
 ===================
 
-Pydantic :func:`~pydantic.BaseModel.model_dump` method have been tuned to produce valid SCIM2 payloads.
+Pydantic :func:`~pydantic_scim2.BaseModel.model_dump` method have been tuned to produce valid SCIM2 payloads.
 
 .. code-block:: python
     :emphasize-lines: 16
@@ -80,7 +80,7 @@ The SCIM specifications detail some :class:`~pydantic_scim2.Mutability` and :cla
 Depending on the context, they will indicate that attributes should be present, absent, be ignored.
 
 For instance, attributes marked as :attr:`~pydantic_scim2.Mutability.read_only` should not be sent by SCIM clients on resource creation requests.
-By passing the right :class:`~pydantic_scim2.Context` to the :meth:`~pydantic_scim2.SCIM2Model.model_dump` method, only the expected fields will be dumped for this context:
+By passing the right :class:`~pydantic_scim2.Context` to the :meth:`~pydantic_scim2.BaseModel.model_dump` method, only the expected fields will be dumped for this context:
 
 .. code-block:: python
     :caption: Client generating a resource creation request payload
@@ -89,7 +89,7 @@ By passing the right :class:`~pydantic_scim2.Context` to the :meth:`~pydantic_sc
     >>> user = User(user_name="bjensen@example.com")
     >>> payload = user.model_dump(scim_ctx=Context.RESOURCE_CREATION_REQUEST)
 
-In the same fashion, by passing the right :class:`~pydantic_scim2.Context` to the :meth:`~pydantic_scim2.SCIM2Model.model_validate` method,
+In the same fashion, by passing the right :class:`~pydantic_scim2.Context` to the :meth:`~pydantic_scim2.BaseModel.model_validate` method,
 fields with unexpected values will raise :class:`~pydantic.ValidationError`:
 
 .. code-block:: python
@@ -108,7 +108,7 @@ Attributes inclusions and exclusions
 In some situations it might be needed to exclude, or only include a given set of attributes when serializing a model.
 This happens for instance when servers build response payloads for clients requesting only a sub-set the model attributes.
 As defined in :rfc:`RFC7644 §3.9 <7644#section-3.9>`, :code:`attributes` and :code:`excluded_attributes` parameters can
-be passed to :meth:`~pydantic_scim2.SCIM2Model.model_dump`.
+be passed to :meth:`~pydantic_scim2.BaseModel.model_dump`.
 The expected attribute notation is the one detailed on :rfc:`RFC7644 §3.10 <7644#section-3.10>`,
 like :code:`urn:ietf:params:scim:schemas:core:2.0:User:userName`, or :code:`userName` for short.
 
@@ -127,7 +127,7 @@ like :code:`urn:ietf:params:scim:schemas:core:2.0:User:userName`, or :code:`user
     ...     "displayName": "bjensen",
     ... }
 
-Values read from :attr:`~pydantic_scim2.SearchRequest.attributes` and :attr:`~pydantic_scim2.SearchRequest.excluded_attributes` in :class:`~pydantic_scim2.SearchRequest` objects can directly be used in :meth:`~pydantic_scim2.SCIM2Model.model_dump`.
+Values read from :attr:`~pydantic_scim2.SearchRequest.attributes` and :attr:`~pydantic_scim2.SearchRequest.excluded_attributes` in :class:`~pydantic_scim2.SearchRequest` objects can directly be used in :meth:`~pydantic_scim2.BaseModel.model_dump`.
 
 Attribute inclusions and exclusions interact with attributes :class:`~pydantic_scim2.Returned`, in the server response :class:`Contexts <pydantic_scim2.Context>`:
 

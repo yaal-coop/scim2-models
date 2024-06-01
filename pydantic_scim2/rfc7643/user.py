@@ -6,15 +6,15 @@ from typing import Optional
 from pydantic import AnyUrl
 from pydantic import EmailStr
 
+from ..base import BaseModel
 from ..base import Mutability
 from ..base import Required
-from ..base import SCIM2Model
 from ..base import Uniqueness
 from .group import GroupMember
 from .resource import Resource
 
 
-class Name(SCIM2Model):
+class Name(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.name"
 
     formatted: Optional[str] = None
@@ -42,7 +42,7 @@ class Name(SCIM2Model):
     languages (e.g., 'III' given the full name 'Ms. Barbara J Jensen, III')."""
 
 
-class Email(SCIM2Model):
+class Email(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.emails"
 
     class Type(str, Enum):
@@ -65,7 +65,7 @@ class Email(SCIM2Model):
     address."""
 
 
-class PhoneNumber(SCIM2Model):
+class PhoneNumber(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.phoneNumbers"
 
     class Type(str, Enum):
@@ -92,7 +92,7 @@ class PhoneNumber(SCIM2Model):
     number."""
 
 
-class Im(SCIM2Model):
+class Im(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.ims"
 
     class Type(str, Enum):
@@ -120,7 +120,7 @@ class Im(SCIM2Model):
     for this attribute, e.g., the preferred messenger or primary messenger."""
 
 
-class Photo(SCIM2Model):
+class Photo(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.photos"
 
     class Type(str, Enum):
@@ -142,7 +142,7 @@ class Photo(SCIM2Model):
     for this attribute, e.g., the preferred photo or thumbnail."""
 
 
-class Address(SCIM2Model):
+class Address(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.addresses"
 
     class Type(str, Enum):
@@ -181,7 +181,7 @@ class Address(SCIM2Model):
     for this attribute, e.g., the preferred photo or thumbnail."""
 
 
-class Entitlement(SCIM2Model):
+class Entitlement(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.entitlements"
 
     value: Optional[str] = None
@@ -198,7 +198,7 @@ class Entitlement(SCIM2Model):
     for this attribute."""
 
 
-class Role(SCIM2Model):
+class Role(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.roles"
 
     value: Optional[str] = None
@@ -215,7 +215,7 @@ class Role(SCIM2Model):
     for this attribute."""
 
 
-class X509Certificate(SCIM2Model):
+class X509Certificate(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.x509Certificates"
 
     value: Optional[str] = None

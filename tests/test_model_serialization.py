@@ -4,14 +4,14 @@ from typing import Optional
 
 import pytest
 
+from pydantic_scim2.base import BaseModel
 from pydantic_scim2.base import Context
 from pydantic_scim2.base import Mutability
 from pydantic_scim2.base import Returned
-from pydantic_scim2.base import SCIM2Model
 from pydantic_scim2.rfc7643.resource import Resource
 
 
-class SubRetModel(SCIM2Model):
+class SubRetModel(BaseModel):
     _attribute_urn: str = "org:example:SupRetResource:sub"
 
     always_returned: Annotated[Optional[str], Returned.always] = None

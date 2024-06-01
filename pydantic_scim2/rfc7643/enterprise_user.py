@@ -4,10 +4,10 @@ from typing import Optional
 from pydantic import AnyUrl
 from pydantic import Field
 
-from ..base import SCIM2Model
+from ..base import BaseModel
 
 
-class Manager(SCIM2Model):
+class Manager(BaseModel):
     _attribute_urn: str = (
         "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager"
     )
@@ -25,7 +25,7 @@ class Manager(SCIM2Model):
     """The displayName of the User's manager."""
 
 
-class EnterpriseUser(SCIM2Model):
+class EnterpriseUser(BaseModel):
     schemas: List[str] = ["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"]
 
     employee_number: Optional[str] = None

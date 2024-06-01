@@ -5,18 +5,18 @@ from typing import Optional
 
 from pydantic import AnyUrl
 
+from ..base import BaseModel
 from ..base import Mutability
 from ..base import Required
-from ..base import SCIM2Model
 from .resource import Resource
 
 
-class Patch(SCIM2Model):
+class Patch(BaseModel):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class Bulk(SCIM2Model):
+class Bulk(BaseModel):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
@@ -27,7 +27,7 @@ class Bulk(SCIM2Model):
     """An integer value specifying the maximum payload size in bytes."""
 
 
-class Filter(SCIM2Model):
+class Filter(BaseModel):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
@@ -35,22 +35,22 @@ class Filter(SCIM2Model):
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class ChangePassword(SCIM2Model):
+class ChangePassword(BaseModel):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class Sort(SCIM2Model):
+class Sort(BaseModel):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class ETag(SCIM2Model):
+class ETag(BaseModel):
     supported: Annotated[bool, Mutability.read_only]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class AuthenticationScheme(SCIM2Model):
+class AuthenticationScheme(BaseModel):
     class Type(str, Enum):
         oauth = "oauth"
         oauth2 = "oauth2"

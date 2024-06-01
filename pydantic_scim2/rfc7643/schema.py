@@ -3,14 +3,14 @@ from typing import Annotated
 from typing import List
 from typing import Optional
 
+from ..base import BaseModel
 from ..base import Mutability
 from ..base import Returned
-from ..base import SCIM2Model
 from ..base import Uniqueness
 from .resource import Meta
 
 
-class Attribute(SCIM2Model):
+class Attribute(BaseModel):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:Schema.attributes"
 
     class Type(str, Enum):
@@ -69,7 +69,7 @@ class Attribute(SCIM2Model):
     types that may be referenced."""
 
 
-class Schema(SCIM2Model):
+class Schema(BaseModel):
     schemas: List[str] = ["urn:ietf:params:scim:schemas:core:2.0:Schema"]
 
     meta: Annotated[Optional[Meta], Mutability.read_only] = None

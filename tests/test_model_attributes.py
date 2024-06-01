@@ -4,7 +4,7 @@ from typing import Optional
 
 import pytest
 
-from pydantic_scim2 import SCIM2Model
+from pydantic_scim2 import BaseModel
 from pydantic_scim2.attributes import validate_attribute_urn
 from pydantic_scim2.base import Returned
 from pydantic_scim2.rfc7643.resource import Resource
@@ -12,7 +12,7 @@ from pydantic_scim2.rfc7643.user import User
 
 
 def test_get_attribute_urn():
-    class Sub(SCIM2Model):
+    class Sub(BaseModel):
         _attribute_urn = "urn:example:2.0:Sup:sub"
         dummy: str
 
@@ -33,7 +33,7 @@ def test_get_attribute_urn():
 
 
 def test_guess_root_type():
-    class Sub(SCIM2Model):
+    class Sub(BaseModel):
         _attribute_urn = "urn:example:2.0:Sup:sub"
         dummy: str
 
@@ -48,14 +48,14 @@ def test_guess_root_type():
     assert Sup.get_field_root_type("subs") == Sub
 
 
-class ReturnedModel(SCIM2Model):
+class ReturnedModel(BaseModel):
     always: Annotated[Optional[str], Returned.always] = None
     never: Annotated[Optional[str], Returned.never] = None
     default: Annotated[Optional[str], Returned.default] = None
     request: Annotated[Optional[str], Returned.request] = None
 
 
-class Baz(SCIM2Model):
+class Baz(BaseModel):
     baz_snake_case: str
 
 

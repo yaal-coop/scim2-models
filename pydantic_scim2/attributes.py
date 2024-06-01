@@ -8,7 +8,7 @@ def validate_model_attribute(model: Type, attribute_base: str) -> None:
     """Validate that an attribute name or a sub-attribute path exist for a
     given model."""
 
-    from pydantic_scim2.base import SCIM2Model
+    from pydantic_scim2.base import BaseModel
 
     attribute_name, *sub_attribute_blocks = attribute_base.split(".")
     sub_attribute_base = ".".join(sub_attribute_blocks)
@@ -23,7 +23,7 @@ def validate_model_attribute(model: Type, attribute_base: str) -> None:
     if sub_attribute_base:
         attribute_type = model.get_field_root_type(attribute_name)
 
-        if not issubclass(attribute_type, SCIM2Model):
+        if not issubclass(attribute_type, BaseModel):
             raise ValueError(
                 f"Attribute '{attribute_name}' is not a complex attribute, and cannot have a '{sub_attribute_base}' sub-attribute"
             )

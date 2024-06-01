@@ -5,13 +5,13 @@ from typing import Optional
 from pydantic import AnyUrl
 from pydantic import Field
 
+from ..base import BaseModel
 from ..base import Mutability
 from ..base import Required
-from ..base import SCIM2Model
 from .resource import Resource
 
 
-class SchemaExtension(SCIM2Model):
+class SchemaExtension(BaseModel):
     _attribute_urn: str = (
         "urn:ietf:params:scim:schemas:core:2.0:ResourceType.schemaExtensions"
     )

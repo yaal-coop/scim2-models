@@ -7,11 +7,11 @@ from typing import Optional
 from pydantic import Field
 from pydantic import PlainSerializer
 
-from ..base import SCIM2Model
+from ..base import BaseModel
 from ..utils import int_to_str
 
 
-class BulkOperation(SCIM2Model):
+class BulkOperation(BaseModel):
     class Method(str, Enum):
         post = "POST"
         put = "PUT"
@@ -45,7 +45,7 @@ class BulkOperation(SCIM2Model):
     """The HTTP response status code for the requested operation."""
 
 
-class BulkRequest(SCIM2Model):
+class BulkRequest(BaseModel):
     schemas: List[str] = ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"]
 
     fail_on_errors: Optional[int] = None
@@ -57,7 +57,7 @@ class BulkRequest(SCIM2Model):
     """Defines operations within a bulk job."""
 
 
-class BulkResponse(SCIM2Model):
+class BulkResponse(BaseModel):
     schemas: List[str] = ["urn:ietf:params:scim:api:messages:2.0:BulkResponse"]
 
     operations: List[BulkOperation] = Field(..., alias="Operations")

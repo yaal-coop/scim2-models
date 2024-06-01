@@ -242,12 +242,10 @@ class Required(Enum):
     false = False
 
 
-class SCIM2Model(BaseModel):
+class BaseModel(BaseModel):
     """Base Model for everything."""
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-
-    _schema: Optional[str] = None
 
     @classmethod
     def get_field_mutability(cls, field_name: str) -> Mutability:
@@ -279,7 +277,7 @@ class SCIM2Model(BaseModel):
 
         See :rfc:`RFC7644 §3.12 <7644#section-3.12>`.
 
-        .. todo:: Actually *guess* the URN instead of using the hacky `_schema` attribute.
+        .. todo:: Actually *guess* the URN instead of using the hacky `_attribute_urn` attribute.
         """
         alias = self.model_fields[field_name].alias or field_name
         return f"{self._attribute_urn}.{alias}"
@@ -480,7 +478,7 @@ class SCIM2Model(BaseModel):
         self, handler, info: SerializationInfo
     ) -> Dict[str, Any]:
         """Remove `None` values inserted by the
-        :meth:`~pydantic_scim2.base.SCIM2Model.scim_field_serializer`."""
+        :meth:`~pydantic_scim2.base.BaseModel.scim_field_serializer`."""
 
         result = handler(self)
         return {key: value for key, value in result.items() if value is not None}
@@ -488,7 +486,7 @@ class SCIM2Model(BaseModel):
     @classmethod
     def model_validate(
         cls, *args, scim_ctx: Optional[Context] = Context.DEFAULT, **kwargs
-    ) -> "SCIM2Model":
+    ) -> "BaseModel":
         """Validate SCIM payloads and generate model representation by using
         Pydantic :code:`BaseModel.model_validate`."""
 
@@ -529,4 +527,4 @@ class SCIM2Model(BaseModel):
         return super().model_dump(*args, **kwargs)
 
 
-AnyModel = TypeVar("AnyModel", bound=SCIM2Model)
+AnyModel = TypeVar("AnyModel", bound=BaseModel)
