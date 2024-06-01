@@ -68,6 +68,37 @@ def mut_resource():
     )
 
 
+def test_dump_default(mut_resource):
+    """By default, everything is dumped."""
+
+    assert mut_resource.model_dump() == {
+        "schemas": ["org:example:MutResource"],
+        "id": "id",
+        "readOnly": "x",
+        "readWrite": "x",
+        "immutable": "x",
+        "writeOnly": "x",
+    }
+
+    assert mut_resource.model_dump(scim_ctx=SCIM2Context.DEFAULT) == {
+        "schemas": ["org:example:MutResource"],
+        "id": "id",
+        "readOnly": "x",
+        "readWrite": "x",
+        "immutable": "x",
+        "writeOnly": "x",
+    }
+
+    assert mut_resource.model_dump(scim_ctx=None) == {
+        "schemas": ["org:example:MutResource"],
+        "id": "id",
+        "read_only": "x",
+        "read_write": "x",
+        "immutable": "x",
+        "write_only": "x",
+    }
+
+
 def test_dump_creation_request(mut_resource):
     """Test query building for resource creation request:
 

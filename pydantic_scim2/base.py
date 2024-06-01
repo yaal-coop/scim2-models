@@ -4,7 +4,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Set
 from typing import Type
 from typing import TypeVar
 from typing import Union
@@ -201,15 +200,6 @@ class SCIM2Model(BaseModel):
         return f"{self._attribute_urn}.{alias}"
 
     @classmethod
-    def get_field_name_by_alias(cls, alias: str) -> str:
-        """Find a field name by its alias."""
-
-        by_alias = {
-            field.alias: field_name for field_name, field in cls.model_fields.items()
-        }
-        return by_alias.get(alias)
-
-    @classmethod
     def get_field_root_type(cls, attribute_name: str) -> Type:
         """Extract the root type from a model field.
 
@@ -224,7 +214,9 @@ class SCIM2Model(BaseModel):
             attribute_type = get_args(attribute_type)[0]
 
         # extract 'x' from 'List[x]'
-        if get_origin(attribute_type) is List:
+        if isinstance(get_origin(attribute_type), Type) and issubclass(
+            get_origin(attribute_type), List
+        ):
             attribute_type = get_args(attribute_type)[0]
 
         return attribute_type
@@ -319,28 +311,6 @@ class SCIM2Model(BaseModel):
                 )
 
         return handler(value)
-
-    @classmethod
-    def filter_attributes(
-        cls,
-        mutability: Optional[List[Mutability]] = None,
-        returned: Optional[List[Returned]] = None,
-    ) -> Set[str]:
-        """Return a list of attributes matching mutability and returnability
-        criterias."""
-
-        def match(
-            field: str,
-            mutability: Optional[List[Mutability]] = None,
-            returned: Optional[List[Returned]] = None,
-        ):
-            return (
-                not mutability or cls.get_field_mutability(field) in mutability
-            ) and (not returned or cls.get_field_returnability(field) in returned)
-
-        return {
-            field for field in cls.model_fields if match(field, mutability, returned)
-        }
 
     @field_serializer("*", mode="wrap")
     def scim_serializer(

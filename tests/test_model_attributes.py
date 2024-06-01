@@ -5,7 +5,6 @@ from typing import Optional
 import pytest
 
 from pydantic_scim2 import SCIM2Model
-from pydantic_scim2.attributes import scim_attributes_to_pydantic
 from pydantic_scim2.attributes import validate_attribute_urn
 from pydantic_scim2.base import Returned
 from pydantic_scim2.rfc7643.resource import Resource
@@ -31,6 +30,22 @@ def test_get_attribute_urn():
 
     # TODO: fix this by dynamically guess attribute urns
     # assert sup.subs[0].get_attribute_urn("dummy") == "urn:example:2.0:Bar:subs.dummy"
+
+
+def test_guess_root_type():
+    class Sub(SCIM2Model):
+        _attribute_urn = "urn:example:2.0:Sup:sub"
+        dummy: str
+
+    class Sup(Resource):
+        schemas: List[str] = ["urn:example:2.0:Sup"]
+        dummy: str
+        sub: Sub
+        subs: List[Sub]
+
+    assert Sup.get_field_root_type("dummy") == str
+    assert Sup.get_field_root_type("sub") == Sub
+    assert Sup.get_field_root_type("subs") == Sub
 
 
 class ReturnedModel(SCIM2Model):
@@ -140,77 +155,3 @@ def test_validate_attribute_urn():
         match="Attribute 'bar' is not a complex attribute, and cannot have a 'invalid' sub-attribute",
     ):
         validate_attribute_urn("bar.invalid", Foo)
-
-
-def test_scim_attributes_to_pydantic():
-    """Test transforming SCIM attributes to pydantic attributes in simple
-    conditions."""
-
-    assert scim_attributes_to_pydantic(["bar"], Foo) == {Foo: {"bar": True}}
-    assert scim_attributes_to_pydantic(["bar"], Foo, fill_value=False) == {
-        Foo: {"bar": False}
-    }
-    assert scim_attributes_to_pydantic(["urn:example:2.0:Foo:bar"], Foo) == {
-        Foo: {"bar": True}
-    }
-
-    assert scim_attributes_to_pydantic(["sub.always"], Foo) == {
-        Foo: {"sub": {"always": True}}
-    }
-
-    with pytest.raises(ValueError):
-        scim_attributes_to_pydantic(["urn:invalid:bar"], Foo) == {Foo: {"bar": True}}
-
-
-def test_scim_attributes_to_pydantic_nested():
-    """Test transforming SCIM sub-attributes to pydantic attributes tree."""
-
-    assert scim_attributes_to_pydantic(["urn:example:2.0:Foo:sub.always"], Foo) == {
-        Foo: {"sub": {"always": True}}
-    }
-
-    with pytest.raises(ValueError):
-        scim_attributes_to_pydantic(["urn:example:2.0:Foo:bar"]) == {
-            Foo: {"sub": {"always": True}}
-        }
-
-    assert scim_attributes_to_pydantic(
-        ["urn:example:2.0:Foo:bar", "urn:example:2.0:Bar:bar"],
-        resource_types=[Foo, Bar],
-    ) == {
-        Foo: {"bar": True},
-        Bar: {"bar": True},
-    }
-
-    assert scim_attributes_to_pydantic(["bar", "sub.always"], Foo) == {
-        Foo: {"bar": True, "sub": {"always": True}}
-    }
-
-
-def test_scim_attributes_to_pydantic_alias():
-    """Test transforming SCIM attributes to pydantic attribute tree when there
-    are aliases."""
-
-    assert scim_attributes_to_pydantic(["snakeCase"], Foo) == {
-        Foo: {"snake_case": True}
-    }
-    assert scim_attributes_to_pydantic(["urn:example:2.0:Foo:snakeCase"], Foo) == {
-        Foo: {"snake_case": True}
-    }
-
-    assert scim_attributes_to_pydantic(["baz.bazSnakeCase"], Foo) == {
-        Foo: {"baz": {"baz_snake_case": True}}
-    }
-    assert scim_attributes_to_pydantic(
-        ["urn:example:2.0:Foo:baz.bazSnakeCase"], Foo
-    ) == {Foo: {"baz": {"baz_snake_case": True}}}
-
-
-@pytest.mark.skip
-def test_scim_attributes_to_pydantic_extension():
-    """Test transforming SCIM extension attributes to pydantic attribute
-    tree."""
-
-    assert scim_attributes_to_pydantic(
-        ["urn:example:2.0:Extension:baz"], Foo[Extension]
-    ) == {Foo: {"urn:example:2.0:Extension": {"baz": True}}}

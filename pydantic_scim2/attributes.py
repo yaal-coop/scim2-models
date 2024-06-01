@@ -1,11 +1,7 @@
-from typing import Any
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Type
-
-from pydantic_scim2.utils import merge_dicts
 
 
 def validate_model_attribute(model: Type, attribute_base: str) -> None:
@@ -85,82 +81,6 @@ def validate_attribute_urn(
     validate_model_attribute(resource, attribute_base)
 
     return f"{schema}:{attribute_base}"
-
-
-def build_nested_dict(
-    model: Type, attribute_base_blocks: Optional[str], fill_value: bool = True
-) -> Dict[str, Any]:
-    """Build a dict tree structure based on a list of strings.
-
-    e.g. :code:`build_nested_dict(["foo", "bar", "baz"], True)` will
-    return :code:`{"foo": {"bar": {"baz": True}}}`
-    """
-
-    attribute_name, *sub_blocks = attribute_base_blocks
-    attribute_name = model.get_field_name_by_alias(attribute_name) or attribute_name
-    if sub_blocks:
-        sub_model = model.get_field_root_type(attribute_name)
-        return {attribute_name: build_nested_dict(sub_model, sub_blocks, fill_value)}
-
-    return {attribute_name: fill_value}
-
-
-def build_merged_nested_dict(
-    model: Type, attribute_bases: List[str], fill_value: bool = True
-) -> Dict[str, Any]:
-    # Maybe this could be done in one shot without merging dicts afterward?
-
-    to_merge = [
-        build_nested_dict(model, attribute_base.split("."), fill_value)
-        for attribute_base in attribute_bases
-    ]
-
-    merged = merge_dicts(*to_merge)
-    return merged
-
-
-def scim_attributes_to_pydantic(
-    attributes: List["str"],
-    default_resource: Optional[Type] = None,
-    resource_types: Optional[List[Type]] = None,
-    fill_value: bool = True,
-) -> Dict:
-    """Convert attribute list of SCIM attributes payloads as defined in
-    :rfc:`RFC7644 §3.10 <https://datatracker.ietf.org/doc/html/rfc7644#section-3.10>`, in nested attribute directories usable by pydantic.
-
-    The produced dict is intended to be used as the `include` parameter in pydantic `BaseModel.dump_model` methode."""
-    from pydantic_scim2.rfc7643.resource import Resource
-
-    if not resource_types:
-        resource_types = []
-
-    if default_resource and default_resource not in resource_types:
-        resource_types.append(default_resource)
-
-    normalized_attribute_urns = [
-        validate_attribute_urn(attribute_name, default_resource, resource_types)
-        for attribute_name in attributes
-    ]
-
-    extracted = [
-        extract_schema_and_attribut_base(attribute_urn)
-        for attribute_urn in normalized_attribute_urns
-    ]
-
-    attribute_urns_by_model = {}
-    for schema, attribute_base in extracted:
-        model = Resource.get_by_schema(resource_types, schema)
-        attribute_urns_by_model.setdefault(model, []).append(attribute_base)
-
-    attribute_trees_by_model = {
-        model: build_merged_nested_dict(
-            model=model,
-            attribute_bases=attribute_bases,
-            fill_value=fill_value,
-        )
-        for model, attribute_bases in attribute_urns_by_model.items()
-    }
-    return attribute_trees_by_model
 
 
 def contains_attribute_or_subattributes(attribute_urns: List[str], attribute_urn):
