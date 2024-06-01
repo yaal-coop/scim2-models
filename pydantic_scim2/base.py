@@ -16,11 +16,14 @@ from pydantic import ConfigDict
 from pydantic import SerializationInfo
 from pydantic import SerializerFunctionWrapHandler
 from pydantic import ValidationInfo
+from pydantic import ValidatorFunctionWrapHandler
 from pydantic import field_serializer
 from pydantic import field_validator
 from pydantic import model_serializer
+from pydantic import model_validator
 from pydantic.alias_generators import to_camel
 from pydantic_core import PydanticCustomError
+from typing_extensions import Self
 
 from pydantic_scim2.attributes import contains_attribute_or_subattributes
 from pydantic_scim2.attributes import validate_attribute_urn
@@ -54,8 +57,6 @@ class SCIM2Context(Enum):
     RESOURCE_QUERY_RESPONSE = auto()
     RESOURCE_REPLACEMENT_REQUEST = auto()
     RESOURCE_REPLACEMENT_RESPONSE = auto()
-    RESOURCE_MODIFICATION_REQUEST = auto()
-    RESOURCE_MODIFICATION_RESPONSE = auto()
     SEARCH_REQUEST = auto()
     SEARCH_RESPONSE = auto()
 
@@ -65,7 +66,6 @@ class SCIM2Context(Enum):
             cls.RESOURCE_CREATION_REQUEST,
             cls.RESOURCE_QUERY_REQUEST,
             cls.RESOURCE_REPLACEMENT_REQUEST,
-            cls.RESOURCE_MODIFICATION_REQUEST,
             cls.SEARCH_REQUEST,
         )
 
@@ -75,7 +75,6 @@ class SCIM2Context(Enum):
             cls.RESOURCE_CREATION_RESPONSE,
             cls.RESOURCE_QUERY_RESPONSE,
             cls.RESOURCE_REPLACEMENT_RESPONSE,
-            cls.RESOURCE_MODIFICATION_RESPONSE,
             cls.SEARCH_RESPONSE,
         )
 
@@ -232,94 +231,94 @@ class SCIM2Model(BaseModel):
 
     @field_validator("*")
     @classmethod
-    def check_mutability(cls, value: Any, info: ValidationInfo) -> Any:
+    def check_request_mutability(cls, value: Any, info: ValidationInfo) -> Any:
         """Check that the field mutability is expected according to the
-        validation context, as defined in :rfc:`RFC7643 §7 <7653#section-7>`.
-
-        If not passed in the validation context, this validator does nothing.
-        If mutability is set in the validation context,
-        a :class:`~pydantic.ValidationError` will be raised ifa field is present but does not have the expected mutability.
-
-        .. code-block:: python
-
-            >>> from typing import List, Annotated
-            >>> class Pet(Resource):
-            ...     schemas : List[str] = ["org:example:Pet"]
-            ...
-            ...     name : Annotated[str, Mutability.read_write]
-            ...
-            >>> Pet.model_validate(
-            ...     {"name": "Pluto"},
-            ...     context={"mutability": [Mutability.read_only]},
-            ... )
-            Traceback (most recent call last):
-                ...
-            pydantic_core._pydantic_core.ValidationError: 1 validation error for Pet name
-              Field 'name' has mutability 'readWrite' but expected any of ['readOnly'] [type=mutability_error, input_value='Pluto', input_type=str]
-        """
-        if not info.context or not info.context.get("mutability"):
+        requests validation context, as defined in :rfc:`RFC7643 §7
+        <7653#section-7>`."""
+        if (
+            not info.context
+            or not info.context.get("scim")
+            or not SCIM2Context.is_request(info.context["scim"])
+        ):
             return value
 
-        expected_mutability = info.context.get("mutability")
-        field_mutability = cls.get_field_mutability(info.field_name)
-        if field_mutability not in expected_mutability:
-            raise PydanticCustomError(
-                "mutability_error",
-                "Field '{field_name}' has mutability '{field_mutability}' but expected any of {expected_mutability}",
-                {
-                    "field_name": info.field_name,
-                    "field_mutability": field_mutability,
-                    "expected_mutability": [item.value for item in expected_mutability],
-                },
-            )
+        context = info.context.get("scim")
+        mutability = cls.get_field_mutability(info.field_name)
+        exc = PydanticCustomError(
+            "mutability_error",
+            "Field '{field_name}' has mutability '{field_mutability}' but this in not valid in {context} context",
+            {
+                "field_name": info.field_name,
+                "field_mutability": mutability,
+                "context": context.name.lower().replace("_", " "),
+            },
+        )
+
+        if (
+            context == SCIM2Context.RESOURCE_CREATION_REQUEST
+            and mutability == Mutability.read_only
+        ):
+            raise exc
+
+        if (
+            context
+            in (SCIM2Context.RESOURCE_QUERY_REQUEST, SCIM2Context.SEARCH_REQUEST)
+            and mutability == Mutability.write_only
+        ):
+            raise exc
+
+        if (
+            context == SCIM2Context.RESOURCE_REPLACEMENT_REQUEST
+            and mutability == Mutability.immutable
+        ):
+            raise exc
+
+        if (
+            context == SCIM2Context.RESOURCE_REPLACEMENT_REQUEST
+            and mutability == Mutability.read_only
+        ):
+            return None
 
         return value
 
-    @field_validator("*")
+    @model_validator(mode="wrap")
     @classmethod
-    def check_returnability(cls, value: Any, info: ValidationInfo) -> Any:
-        """Check that the field returnability is expected according to the
-        validation context, as defined in :rfc:`RFC7643 §7 <7653#section-7>`.
+    def check_response_returnability(
+        cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+    ) -> Self:
+        """Check that the fields returnability is expected according to the
+        responses validation context, as defined in :rfc:`RFC7643 §7
+        <7653#section-7>`."""
+        if (
+            not info.context
+            or not info.context.get("scim")
+            or not SCIM2Context.is_response(info.context["scim"])
+        ):
+            return handler(value)
 
-        If not passed in the validation context, this validator does nothing.
-        If returnability is set in the validation context,
-        a :class:`~pydantic.ValidationError` will be raised if a field is present but does not have the expected mutability.
+        for field_name, field in cls.model_fields.items():
+            returnability = cls.get_field_returnability(field_name)
+            alias = field.alias or field_name
 
-        .. code-block:: python
+            if returnability == Returned.always and value.get(alias) is None:
+                raise PydanticCustomError(
+                    "returned_error",
+                    "Field '{field_name}' has returnability 'always' but value is missing or null",
+                    {
+                        "field_name": field_name,
+                    },
+                )
 
-            >>> from typing import List, Annotated
-            >>> class Pet(Resource):
-            ...     schemas : List[str] = ["org:example:Pet"]
-            ...
-            ...     name : Annotated[str, Returned.always]
-            ...
-            >>> Pet.model_validate(
-            ...     {"name": "Pluto"},
-            ...     context={"mutability": [Returned.never]},
-            ... )
-            Traceback (most recent call last):
-                ...
-            pydantic_core._pydantic_core.ValidationError: 1 validation error for Pet name
-              Field 'name' has returnability 'always' but expected any of ['never'] [type=returned_error, input_value='Pluto', input_type=str]
-        """
+            if returnability == Returned.never and value.get(alias) is not None:
+                raise PydanticCustomError(
+                    "returned_error",
+                    "Field '{field_name}' has returnability 'never' but value is set",
+                    {
+                        "field_name": field_name,
+                    },
+                )
 
-        if not info.context or not info.context.get("returned"):
-            return value
-
-        expected_returned = info.context.get("returned")
-        field_returned = cls.get_field_returnability(info.field_name)
-        if field_returned not in expected_returned:
-            raise PydanticCustomError(
-                "returned_error",
-                "Field '{field_name}' has returnability '{field_returned}' but expected any of {expected_returned}",
-                {
-                    "field_name": info.field_name,
-                    "field_returned": field_returned,
-                    "expected_returned": [item.value for item in expected_returned],
-                },
-            )
-
-        return value
+        return handler(value)
 
     @classmethod
     def filter_attributes(
@@ -356,14 +355,14 @@ class SCIM2Model(BaseModel):
         value = handler(value)
 
         if info.context.get("scim") and SCIM2Context.is_request(info.context["scim"]):
-            value = self.scim_mutability_serializer(value, info)
+            value = self.scim_request_serializer(value, info)
 
         if info.context.get("scim") and SCIM2Context.is_response(info.context["scim"]):
-            value = self.scim_returnability_serializer(value, info)
+            value = self.scim_response_serializer(value, info)
 
         return value
 
-    def scim_mutability_serializer(self, value: Any, info: SerializationInfo) -> Any:
+    def scim_request_serializer(self, value: Any, info: SerializationInfo) -> Any:
         """Serialize the fields according to mutability indications passed in
         the serialization context."""
 
@@ -386,15 +385,15 @@ class SCIM2Model(BaseModel):
         ):
             return None
 
-        if context in (
-            SCIM2Context.RESOURCE_MODIFICATION_REQUEST,
-            SCIM2Context.RESOURCE_REPLACEMENT_REQUEST,
-        ) and mutability in (Mutability.immutable, Mutability.read_only):
+        if context == SCIM2Context.RESOURCE_REPLACEMENT_REQUEST and mutability in (
+            Mutability.immutable,
+            Mutability.read_only,
+        ):
             return None
 
         return value
 
-    def scim_returnability_serializer(self, value: Any, info: SerializationInfo) -> Any:
+    def scim_response_serializer(self, value: Any, info: SerializationInfo) -> Any:
         """Serialize the fields according to returability indications passed in
         the serialization context."""
 
@@ -444,8 +443,8 @@ class SCIM2Model(BaseModel):
 
     def model_dump(
         self,
-        scim_ctx: Optional[SCIM2Context] = SCIM2Context.DEFAULT,
         *args,
+        scim_ctx: Optional[SCIM2Context] = SCIM2Context.DEFAULT,
         attributes: Optional[List[str]] = None,
         excluded_attributes: Optional[List[str]] = None,
         **kwargs,

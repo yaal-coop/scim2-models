@@ -68,6 +68,79 @@ def mut_resource():
     )
 
 
+def test_dump_creation_request(mut_resource):
+    """Test query building for resource creation request:
+
+    Attributes marked as:
+    - Mutability.read_write are dumped
+    - Mutability.immutable are dumped
+    - Mutability.write_only are dumped
+    - Mutability.read_only are not dumped
+    """
+    assert mut_resource.model_dump(scim_ctx=SCIM2Context.RESOURCE_CREATION_REQUEST) == {
+        "schemas": ["org:example:MutResource"],
+        "readWrite": "x",
+        "immutable": "x",
+        "writeOnly": "x",
+    }
+
+
+def test_dump_query_request(mut_resource):
+    """Test query building for resource query request:
+
+    Attributes marked as:
+    - Mutability.read_write are dumped
+    - Mutability.immutable are dumped
+    - Mutability.write_only are not dumped
+    - Mutability.read_only are dumped
+    """
+
+    assert mut_resource.model_dump(scim_ctx=SCIM2Context.RESOURCE_QUERY_REQUEST) == {
+        "schemas": ["org:example:MutResource"],
+        "id": "id",
+        "readOnly": "x",
+        "readWrite": "x",
+        "immutable": "x",
+    }
+
+
+def test_dump_replacement_request(mut_resource):
+    """Test query building for resource model replacement requests:
+
+    Attributes marked as:
+    - Mutability.read_write are dumped
+    - Mutability.immutable are not dumped
+    - Mutability.write_only are dumped
+    - Mutability.read_only are not dumped"""
+
+    assert mut_resource.model_dump(
+        scim_ctx=SCIM2Context.RESOURCE_REPLACEMENT_REQUEST
+    ) == {
+        "schemas": ["org:example:MutResource"],
+        "readWrite": "x",
+        "writeOnly": "x",
+    }
+
+
+def test_dump_search_request(mut_resource):
+    """Test query building for resource query request:
+
+    Attributes marked as:
+    - Mutability.read_write are dumped
+    - Mutability.immutable are dumped
+    - Mutability.write_only are not dumped
+    - Mutability.read_only are dumped
+    """
+
+    assert mut_resource.model_dump(scim_ctx=SCIM2Context.RESOURCE_QUERY_REQUEST) == {
+        "schemas": ["org:example:MutResource"],
+        "id": "id",
+        "readOnly": "x",
+        "readWrite": "x",
+        "immutable": "x",
+    }
+
+
 def test_dump_default_response(ret_resource):
     """When no scim context is passed, every attributes are dumped."""
 
@@ -93,7 +166,6 @@ def test_dump_default_response(ret_resource):
         SCIM2Context.RESOURCE_CREATION_RESPONSE,
         SCIM2Context.RESOURCE_QUERY_RESPONSE,
         SCIM2Context.RESOURCE_REPLACEMENT_RESPONSE,
-        SCIM2Context.RESOURCE_MODIFICATION_RESPONSE,
         SCIM2Context.SEARCH_RESPONSE,
     ],
 )
@@ -109,7 +181,7 @@ def test_dump_response(context, ret_resource):
     Including attributes with 'attributes=' replace the whole default set.
     """
 
-    assert ret_resource.model_dump(context) == {
+    assert ret_resource.model_dump(scim_ctx=context) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
@@ -120,26 +192,28 @@ def test_dump_response(context, ret_resource):
         },
     }
 
-    assert ret_resource.model_dump(context, attributes={"alwaysReturned"}) == {
+    assert ret_resource.model_dump(scim_ctx=context, attributes={"alwaysReturned"}) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
     }
 
-    assert ret_resource.model_dump(context, attributes={"neverReturned"}) == {
+    assert ret_resource.model_dump(scim_ctx=context, attributes={"neverReturned"}) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
     }
 
-    assert ret_resource.model_dump(context, attributes={"defaultReturned"}) == {
+    assert ret_resource.model_dump(
+        scim_ctx=context, attributes={"defaultReturned"}
+    ) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
         "defaultReturned": "x",
     }
 
-    assert ret_resource.model_dump(context, attributes={"sub"}) == {
+    assert ret_resource.model_dump(scim_ctx=context, attributes={"sub"}) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
@@ -148,7 +222,9 @@ def test_dump_response(context, ret_resource):
         },
     }
 
-    assert ret_resource.model_dump(context, attributes={"sub.defaultReturned"}) == {
+    assert ret_resource.model_dump(
+        scim_ctx=context, attributes={"sub.defaultReturned"}
+    ) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
@@ -158,7 +234,9 @@ def test_dump_response(context, ret_resource):
         },
     }
 
-    assert ret_resource.model_dump(context, attributes={"requestReturned"}) == {
+    assert ret_resource.model_dump(
+        scim_ctx=context, attributes={"requestReturned"}
+    ) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
         "alwaysReturned": "x",
@@ -166,7 +244,7 @@ def test_dump_response(context, ret_resource):
     }
 
     assert ret_resource.model_dump(
-        context,
+        scim_ctx=context,
         attributes={"defaultReturned", "requestReturned"},
     ) == {
         "schemas": ["org:example:SupRetResource"],
@@ -176,42 +254,8 @@ def test_dump_response(context, ret_resource):
         "requestReturned": "x",
     }
 
-    assert ret_resource.model_dump(context, excluded_attributes={"alwaysReturned"}) == {
-        "schemas": ["org:example:SupRetResource"],
-        "id": "id",
-        "alwaysReturned": "x",
-        "defaultReturned": "x",
-        "sub": {
-            "alwaysReturned": "x",
-            "defaultReturned": "x",
-        },
-    }
-
-    assert ret_resource.model_dump(context, excluded_attributes={"neverReturned"}) == {
-        "schemas": ["org:example:SupRetResource"],
-        "id": "id",
-        "alwaysReturned": "x",
-        "defaultReturned": "x",
-        "sub": {
-            "alwaysReturned": "x",
-            "defaultReturned": "x",
-        },
-    }
-
     assert ret_resource.model_dump(
-        context, excluded_attributes={"defaultReturned"}
-    ) == {
-        "schemas": ["org:example:SupRetResource"],
-        "id": "id",
-        "alwaysReturned": "x",
-        "sub": {
-            "alwaysReturned": "x",
-            "defaultReturned": "x",
-        },
-    }
-
-    assert ret_resource.model_dump(
-        context, excluded_attributes={"requestReturned"}
+        scim_ctx=context, excluded_attributes={"alwaysReturned"}
     ) == {
         "schemas": ["org:example:SupRetResource"],
         "id": "id",
@@ -224,7 +268,45 @@ def test_dump_response(context, ret_resource):
     }
 
     assert ret_resource.model_dump(
-        context,
+        scim_ctx=context, excluded_attributes={"neverReturned"}
+    ) == {
+        "schemas": ["org:example:SupRetResource"],
+        "id": "id",
+        "alwaysReturned": "x",
+        "defaultReturned": "x",
+        "sub": {
+            "alwaysReturned": "x",
+            "defaultReturned": "x",
+        },
+    }
+
+    assert ret_resource.model_dump(
+        scim_ctx=context, excluded_attributes={"defaultReturned"}
+    ) == {
+        "schemas": ["org:example:SupRetResource"],
+        "id": "id",
+        "alwaysReturned": "x",
+        "sub": {
+            "alwaysReturned": "x",
+            "defaultReturned": "x",
+        },
+    }
+
+    assert ret_resource.model_dump(
+        scim_ctx=context, excluded_attributes={"requestReturned"}
+    ) == {
+        "schemas": ["org:example:SupRetResource"],
+        "id": "id",
+        "alwaysReturned": "x",
+        "defaultReturned": "x",
+        "sub": {
+            "alwaysReturned": "x",
+            "defaultReturned": "x",
+        },
+    }
+
+    assert ret_resource.model_dump(
+        scim_ctx=context,
         excluded_attributes={"defaultReturned", "requestReturned"},
     ) == {
         "schemas": ["org:example:SupRetResource"],
@@ -234,91 +316,4 @@ def test_dump_response(context, ret_resource):
             "alwaysReturned": "x",
             "defaultReturned": "x",
         },
-    }
-
-
-def test_dump_creation_request(mut_resource):
-    """Test query building for resource creation request:
-
-    Attributes marked as:
-    - Mutability.read_write are dumped
-    - Mutability.immutable are dumped
-    - Mutability.write_only are dumped
-    - Mutability.read_only are not dumped
-    """
-    assert mut_resource.model_dump(SCIM2Context.RESOURCE_CREATION_REQUEST) == {
-        "schemas": ["org:example:MutResource"],
-        "readWrite": "x",
-        "immutable": "x",
-        "writeOnly": "x",
-    }
-
-
-def test_dump_query_request(mut_resource):
-    """Test query building for resource query request:
-
-    Attributes marked as:
-    - Mutability.read_write are dumped
-    - Mutability.immutable are dumped
-    - Mutability.write_only are not dumped
-    - Mutability.read_only are dumped
-    """
-
-    assert mut_resource.model_dump(SCIM2Context.RESOURCE_QUERY_REQUEST) == {
-        "schemas": ["org:example:MutResource"],
-        "id": "id",
-        "readOnly": "x",
-        "readWrite": "x",
-        "immutable": "x",
-    }
-
-
-def test_dump_replacement_request(mut_resource):
-    """Test query building for resource model replacement requests:
-
-    Attributes marked as:
-    - Mutability.read_write are dumped
-    - Mutability.immutable are not dumped
-    - Mutability.write_only are dumped
-    - Mutability.read_only are not dumped"""
-
-    assert mut_resource.model_dump(SCIM2Context.RESOURCE_REPLACEMENT_REQUEST) == {
-        "schemas": ["org:example:MutResource"],
-        "readWrite": "x",
-        "writeOnly": "x",
-    }
-
-
-def test_dump_modification_request(mut_resource):
-    """Test query building for resource attribute modification requests:
-
-    Attributes marked as:
-    - Mutability.read_write are dumped
-    - Mutability.immutable are not dumped
-    - Mutability.write_only are dumped
-    - Mutability.read_only are not dumped"""
-
-    assert mut_resource.model_dump(SCIM2Context.RESOURCE_MODIFICATION_REQUEST) == {
-        "schemas": ["org:example:MutResource"],
-        "readWrite": "x",
-        "writeOnly": "x",
-    }
-
-
-def test_dump_search_request(mut_resource):
-    """Test query building for resource query request:
-
-    Attributes marked as:
-    - Mutability.read_write are dumped
-    - Mutability.immutable are dumped
-    - Mutability.write_only are not dumped
-    - Mutability.read_only are dumped
-    """
-
-    assert mut_resource.model_dump(SCIM2Context.RESOURCE_QUERY_REQUEST) == {
-        "schemas": ["org:example:MutResource"],
-        "id": "id",
-        "readOnly": "x",
-        "readWrite": "x",
-        "immutable": "x",
     }
