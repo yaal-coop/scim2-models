@@ -308,5 +308,16 @@ class SCIM2Model(BaseModel):
         result = handler(self)
         return {key: value for key, value in result.items() if value is not None}
 
+    def model_dump(self, *args, **kwargs):
+        """Create a model representation that can be included in SCIM messages.
+
+        Based on Pydantic :code:`BaseModel.model_dump` with some tuned default values.
+        """
+
+        kwargs.setdefault("exclude_none", True)
+        kwargs.setdefault("by_alias", True)
+        kwargs.setdefault("mode", "json")
+        return super().model_dump(*args, **kwargs)
+
 
 AnyModel = TypeVar("AnyModel", bound=SCIM2Model)

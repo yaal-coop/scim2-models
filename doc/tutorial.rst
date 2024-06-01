@@ -36,7 +36,7 @@ Python models have generally the same name than in the SCIM specifications, they
 Model serialization
 ===================
 
-Pydantic :func:`~pydantic.BaseModel.model_dump` method can be used to produce valid SCIM2 payloads:
+Pydantic :func:`~pydantic.BaseModel.model_dump` method have been tuned to produce valid SCIM2 payloads.
 
 .. doctest::
 
@@ -55,7 +55,7 @@ Pydantic :func:`~pydantic.BaseModel.model_dump` method can be used to produce va
     ...     ),
     ... )
 
-    >>> dump = user.model_dump(exclude_none=True, by_alias=True, mode="json")
+    >>> dump = user.model_dump()
     >>> assert dump == {
     ...     "schemas": [
     ...         "urn:ietf:params:scim:schemas:core:2.0:User"
@@ -161,7 +161,7 @@ Extensions attributes are accessed with brackets, e.g. ``user[EnterpriseUser].em
 
     >>> user[EnterpriseUser] = EnterpriseUser(employee_number = "701984")
     >>> user[EnterpriseUser].division="Theme Park"
-    >>> dump = user.model_dump(exclude_none=True, by_alias=True, mode="json")
+    >>> dump = user.model_dump()
     >>> assert dump == {
     ...     "schemas": [
     ...         "urn:ietf:params:scim:schemas:core:2.0:User",
@@ -192,7 +192,7 @@ Pre-defined Error objects
 
     >>> from pydantic_scim2 import InvalidPathError
 
-    >>> dump = InvalidPathError.model_dump(exclude_none=True, by_alias=True, mode="json")
+    >>> dump = InvalidPathError.model_dump()
     >>> assert dump == {
     ...     'detail': 'The "path" attribute was invalid or malformed (see Figure 7 of RFC7644).',
     ...     'schemas': ['urn:ietf:params:scim:api:messages:2.0:Error'],

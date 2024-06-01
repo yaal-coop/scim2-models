@@ -135,9 +135,4 @@ def test_enterprise_user(load_sample):
     )
     assert obj[EnterpriseUser].manager.display_name == "John Smith"
 
-    assert (
-        obj.model_dump(
-            exclude_none=True, exclude_unset=True, by_alias=True, mode="json"
-        )
-        == payload
-    )
+    assert obj.model_dump(exclude_unset=True) == payload

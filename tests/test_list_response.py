@@ -103,12 +103,7 @@ def test_mixed_types(load_sample):
     user, group = response.resources
     assert isinstance(user, User)
     assert isinstance(group, Group)
-    assert (
-        response.model_dump(
-            exclude_none=True, exclude_unset=True, by_alias=True, mode="json"
-        )
-        == payload
-    )
+    assert response.model_dump() == payload
 
 
 def test_mixed_types_type_missing(load_sample):

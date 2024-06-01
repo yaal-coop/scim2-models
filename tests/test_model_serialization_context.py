@@ -17,7 +17,21 @@ def test_serialize_by_mutability():
     obj = MutabilityModel(
         read_only="ro", read_write="rw", immutable="im", write_only="wo"
     )
-    assert obj.model_dump(exclude_none=True, by_alias=True, mode="json") == {
+    assert obj.model_dump() == {
+        "readOnly": "ro",
+        "readWrite": "rw",
+        "immutable": "im",
+        "writeOnly": "wo",
+    }
+
+    assert obj.model_dump(context={"mutability": None}) == {
+        "readOnly": "ro",
+        "readWrite": "rw",
+        "immutable": "im",
+        "writeOnly": "wo",
+    }
+
+    assert obj.model_dump(context={"mutability": []}) == {
         "readOnly": "ro",
         "readWrite": "rw",
         "immutable": "im",
@@ -25,27 +39,6 @@ def test_serialize_by_mutability():
     }
 
     assert obj.model_dump(
-        exclude_none=True, by_alias=True, mode="json", context={"mutability": None}
-    ) == {
-        "readOnly": "ro",
-        "readWrite": "rw",
-        "immutable": "im",
-        "writeOnly": "wo",
-    }
-
-    assert obj.model_dump(
-        exclude_none=True, by_alias=True, mode="json", context={"mutability": []}
-    ) == {
-        "readOnly": "ro",
-        "readWrite": "rw",
-        "immutable": "im",
-        "writeOnly": "wo",
-    }
-
-    assert obj.model_dump(
-        exclude_none=True,
-        by_alias=True,
-        mode="json",
         context={"mutability": [Mutability.read_only, Mutability.read_write]},
     ) == {
         "readOnly": "ro",
@@ -64,11 +57,21 @@ def test_serialize_by_returnability():
     obj = ReturnedModel(
         always="always", never="never", default="default", request="request"
     )
-    assert obj.model_dump(
-        exclude_none=True,
-        by_alias=True,
-        mode="json",
-    ) == {
+    assert obj.model_dump() == {
+        "always": "always",
+        "never": "never",
+        "default": "default",
+        "request": "request",
+    }
+
+    assert obj.model_dump(context={"returned": None}) == {
+        "always": "always",
+        "never": "never",
+        "default": "default",
+        "request": "request",
+    }
+
+    assert obj.model_dump(context={"returned": []}) == {
         "always": "always",
         "never": "never",
         "default": "default",
@@ -76,27 +79,6 @@ def test_serialize_by_returnability():
     }
 
     assert obj.model_dump(
-        exclude_none=True, by_alias=True, mode="json", context={"returned": None}
-    ) == {
-        "always": "always",
-        "never": "never",
-        "default": "default",
-        "request": "request",
-    }
-
-    assert obj.model_dump(
-        exclude_none=True, by_alias=True, mode="json", context={"returned": []}
-    ) == {
-        "always": "always",
-        "never": "never",
-        "default": "default",
-        "request": "request",
-    }
-
-    assert obj.model_dump(
-        exclude_none=True,
-        by_alias=True,
-        mode="json",
         context={"returned": [Returned.always, Returned.never]},
     ) == {
         "always": "always",

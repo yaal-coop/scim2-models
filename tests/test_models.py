@@ -48,9 +48,4 @@ def test_parse_and_serialize_examples(load_sample):
 
         payload = load_sample(sample)
         obj = model.model_validate(payload)
-        assert (
-            obj.model_dump(
-                exclude_none=True, exclude_unset=True, by_alias=True, mode="json"
-            )
-            == payload
-        )
+        assert obj.model_dump(exclude_unset=True) == payload
