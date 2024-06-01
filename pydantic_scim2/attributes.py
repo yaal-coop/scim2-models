@@ -5,14 +5,14 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 
-from pydantic_scim2.base import SCIM2Model
-from pydantic_scim2.rfc7643.resource import Resource
 from pydantic_scim2.utils import merge_dicts
 
 
 def validate_model_attribute(model: Type, attribute_base: str) -> None:
     """Validate that an attribute name or a sub-attribute path exist for a
     given model."""
+
+    from pydantic_scim2.base import SCIM2Model
 
     attribute_name, *sub_attribute_blocks = attribute_base.split(".")
     sub_attribute_base = ".".join(sub_attribute_blocks)
@@ -56,6 +56,8 @@ def validate_attribute_urn(
     :resource_types: The available resources in which to look for the attribute.
     :return: The normalized attribute URN.
     """
+
+    from pydantic_scim2.rfc7643.resource import Resource
 
     if not resource_types:
         resource_types = []
@@ -127,6 +129,8 @@ def scim_attributes_to_pydantic(
     :rfc:`RFC7644 §3.10 <https://datatracker.ietf.org/doc/html/rfc7644#section-3.10>`, in nested attribute directories usable by pydantic.
 
     The produced dict is intended to be used as the `include` parameter in pydantic `BaseModel.dump_model` methode."""
+    from pydantic_scim2.rfc7643.resource import Resource
+
     if not resource_types:
         resource_types = []
 
@@ -157,3 +161,9 @@ def scim_attributes_to_pydantic(
         for model, attribute_bases in attribute_urns_by_model.items()
     }
     return attribute_trees_by_model
+
+
+def contains_attribute_or_subattributes(attribute_urns: List[str], attribute_urn):
+    return attribute_urn in attribute_urns or any(
+        item.startswith(f"{attribute_urn}.") for item in attribute_urns
+    )

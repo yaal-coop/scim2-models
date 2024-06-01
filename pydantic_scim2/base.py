@@ -1,4 +1,5 @@
 from enum import Enum
+from enum import auto
 from typing import Any
 from typing import Dict
 from typing import List
@@ -20,6 +21,63 @@ from pydantic import field_validator
 from pydantic import model_serializer
 from pydantic.alias_generators import to_camel
 from pydantic_core import PydanticCustomError
+
+from pydantic_scim2.attributes import contains_attribute_or_subattributes
+from pydantic_scim2.attributes import validate_attribute_urn
+
+
+class SCIM2AttributeURN(str):
+    pass
+
+
+class SCIM2Context(Enum):
+    """Represent the different HTTP contexts detailed in :rfc:`RFC7644 §3.2
+    <7644#section-3.2>`
+
+    Contexts are intented to be used during model validation and serialization.
+    For instance a client preparing a resource creation POST request can use
+    :code:`resource.model_dump(SCIM2Context.RESOURCE_CREATION_REQUEST)` and
+    the server can then validate it with
+    :code:`resource.model_validate(SCIM2Context.RESOURCE_CREATION_REQUEST)`.
+    """
+
+    DEFAULT = auto()
+    """The default context.
+
+    All fields are accepted during validation, and all fields are
+    serialized during a dump.
+    """
+
+    RESOURCE_CREATION_REQUEST = auto()
+    RESOURCE_CREATION_RESPONSE = auto()
+    RESOURCE_QUERY_REQUEST = auto()
+    RESOURCE_QUERY_RESPONSE = auto()
+    RESOURCE_REPLACEMENT_REQUEST = auto()
+    RESOURCE_REPLACEMENT_RESPONSE = auto()
+    RESOURCE_MODIFICATION_REQUEST = auto()
+    RESOURCE_MODIFICATION_RESPONSE = auto()
+    SEARCH_REQUEST = auto()
+    SEARCH_RESPONSE = auto()
+
+    @classmethod
+    def is_request(cls, ctx: "SCIM2Context") -> bool:
+        return ctx in (
+            cls.RESOURCE_CREATION_REQUEST,
+            cls.RESOURCE_QUERY_REQUEST,
+            cls.RESOURCE_REPLACEMENT_REQUEST,
+            cls.RESOURCE_MODIFICATION_REQUEST,
+            cls.SEARCH_REQUEST,
+        )
+
+    @classmethod
+    def is_response(cls, ctx: "SCIM2Context") -> bool:
+        return ctx in (
+            cls.RESOURCE_CREATION_RESPONSE,
+            cls.RESOURCE_QUERY_RESPONSE,
+            cls.RESOURCE_REPLACEMENT_RESPONSE,
+            cls.RESOURCE_MODIFICATION_RESPONSE,
+            cls.SEARCH_RESPONSE,
+        )
 
 
 class Mutability(str, Enum):
@@ -106,6 +164,8 @@ class SCIM2Model(BaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
+    _schema: Optional[str] = None
+
     @classmethod
     def get_field_mutability(cls, field_name: str) -> Mutability:
         field_metadata = cls.model_fields[field_name].metadata
@@ -130,6 +190,16 @@ class SCIM2Model(BaseModel):
 
         field_returned = next(filter(returned_filter, field_metadata), default_returned)
         return field_returned
+
+    def get_attribute_urn(self, field_name: str) -> Returned:
+        """Build the full URN of the attribute.
+
+        See :rfc:`RFC7644 §3.12 <7644#section-3.12>`.
+
+        .. todo:: Actually *guess* the URN instead of using the hacky `_schema` attribute.
+        """
+        alias = self.model_fields[field_name].alias or field_name
+        return f"{self._attribute_urn}.{alias}"
 
     @classmethod
     def get_field_name_by_alias(cls, alias: str) -> str:
@@ -274,27 +344,80 @@ class SCIM2Model(BaseModel):
         }
 
     @field_serializer("*", mode="wrap")
-    def scim_field_serializer(
+    def scim_serializer(
         self,
         value: Any,
         handler: SerializerFunctionWrapHandler,
         info: SerializationInfo,
     ) -> Any:
-        """Serialize the fields according to the mutability and returability
-        indications passed in the serialization context."""
+        """Serialize the fields according to mutability indications passed in
+        the serialization context."""
+
         value = handler(value)
 
-        if not info.context:
-            return value
+        if info.context.get("scim") and SCIM2Context.is_request(info.context["scim"]):
+            value = self.scim_mutability_serializer(value, info)
 
-        if info.context.get("mutability") and self.get_field_mutability(
-            info.field_name
-        ) not in info.context.get("mutability"):
+        if info.context.get("scim") and SCIM2Context.is_response(info.context["scim"]):
+            value = self.scim_returnability_serializer(value, info)
+
+        return value
+
+    def scim_mutability_serializer(self, value: Any, info: SerializationInfo) -> Any:
+        """Serialize the fields according to mutability indications passed in
+        the serialization context."""
+
+        mutability = self.get_field_mutability(info.field_name)
+        context = info.context.get("scim")
+
+        if (
+            context == SCIM2Context.RESOURCE_CREATION_REQUEST
+            and mutability == Mutability.read_only
+        ):
             return None
 
-        if info.context.get("returned") and self.get_field_returnability(
-            info.field_name
-        ) not in info.context.get("returned"):
+        if (
+            context
+            in (
+                SCIM2Context.RESOURCE_QUERY_REQUEST,
+                SCIM2Context.SEARCH_REQUEST,
+            )
+            and mutability == Mutability.write_only
+        ):
+            return None
+
+        if context in (
+            SCIM2Context.RESOURCE_MODIFICATION_REQUEST,
+            SCIM2Context.RESOURCE_REPLACEMENT_REQUEST,
+        ) and mutability in (Mutability.immutable, Mutability.read_only):
+            return None
+
+        return value
+
+    def scim_returnability_serializer(self, value: Any, info: SerializationInfo) -> Any:
+        """Serialize the fields according to returability indications passed in
+        the serialization context."""
+
+        returnability = self.get_field_returnability(info.field_name)
+        attribute_urn = self.get_attribute_urn(info.field_name)
+        included_urns = info.context.get("scim_attributes", [])
+        excluded_urns = info.context.get("scim_excluded_attributes", [])
+
+        if returnability == Returned.never:
+            return None
+
+        if returnability == Returned.default and (
+            (
+                included_urns
+                and not contains_attribute_or_subattributes(
+                    included_urns, attribute_urn
+                )
+            )
+            or attribute_urn in excluded_urns
+        ):
+            return None
+
+        if returnability == Returned.request and attribute_urn not in included_urns:
             return None
 
         return value
@@ -303,20 +426,53 @@ class SCIM2Model(BaseModel):
     def model_serializer_exclude_none(
         self, handler, info: SerializationInfo
     ) -> Dict[str, Any]:
-        """Remove `None` values inserted by the field_serializer."""
+        """Remove `None` values inserted by the
+        :meth:`~pydantic_scim2.base.SCIM2Model.scim_field_serializer`."""
 
         result = handler(self)
         return {key: value for key, value in result.items() if value is not None}
 
-    def model_dump(self, *args, **kwargs):
-        """Create a model representation that can be included in SCIM messages.
+    @classmethod
+    def model_validate(
+        cls, *args, scim_ctx: Optional[SCIM2Context] = SCIM2Context.DEFAULT, **kwargs
+    ) -> "SCIM2Model":
+        """Validate SCIM payloads and generate model representation by using
+        Pydantic :code:`BaseModel.model_validate`."""
 
-        Based on Pydantic :code:`BaseModel.model_dump` with some tuned default values.
+        kwargs.setdefault("context", {}).setdefault("scim", scim_ctx)
+        return super().model_validate(*args, **kwargs)
+
+    def model_dump(
+        self,
+        scim_ctx: Optional[SCIM2Context] = SCIM2Context.DEFAULT,
+        *args,
+        attributes: Optional[List[str]] = None,
+        excluded_attributes: Optional[List[str]] = None,
+        **kwargs,
+    ):
+        """Create a model representation that can be included in SCIM messages
+        by using Pydantic :code:`BaseModel.model_dump`.
+
+        :param scim_ctx: If a SCIM context is passed, some default values of
+        Pydantic :code:`BaseModel.model_dump` are tuned to generate valid SCIM
+        messages. Pass :data:`None` to get the default Pydantic behavior.
         """
 
-        kwargs.setdefault("exclude_none", True)
-        kwargs.setdefault("by_alias", True)
-        kwargs.setdefault("mode", "json")
+        kwargs.setdefault("context", {}).setdefault("scim", scim_ctx)
+        kwargs["context"]["scim_attributes"] = [
+            validate_attribute_urn(attribute, self.__class__)
+            for attribute in (attributes or [])
+        ]
+        kwargs["context"]["scim_excluded_attributes"] = [
+            validate_attribute_urn(attribute, self.__class__)
+            for attribute in (excluded_attributes or [])
+        ]
+
+        if scim_ctx:
+            kwargs.setdefault("exclude_none", True)
+            kwargs.setdefault("by_alias", True)
+            kwargs.setdefault("mode", "json")
+
         return super().model_dump(*args, **kwargs)
 
 

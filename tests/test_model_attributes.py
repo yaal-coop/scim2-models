@@ -12,6 +12,27 @@ from pydantic_scim2.rfc7643.resource import Resource
 from pydantic_scim2.rfc7643.user import User
 
 
+def test_get_attribute_urn():
+    class Sub(SCIM2Model):
+        _attribute_urn = "urn:example:2.0:Sup:sub"
+        dummy: str
+
+    class Sup(Resource):
+        schemas: List[str] = ["urn:example:2.0:Sup"]
+        dummy: str
+        sub: Sub
+        subs: List[Sub]
+
+    sup = Sup(dummy="x", sub=Sub(dummy="x"), subs=[Sub(dummy="x")])
+
+    assert sup.get_attribute_urn("dummy") == "urn:example:2.0:Sup:dummy"
+    assert sup.get_attribute_urn("sub") == "urn:example:2.0:Sup:sub"
+    assert sup.sub.get_attribute_urn("dummy") == "urn:example:2.0:Sup:sub.dummy"
+
+    # TODO: fix this by dynamically guess attribute urns
+    # assert sup.subs[0].get_attribute_urn("dummy") == "urn:example:2.0:Bar:subs.dummy"
+
+
 class ReturnedModel(SCIM2Model):
     always: Annotated[Optional[str], Returned.always] = None
     never: Annotated[Optional[str], Returned.never] = None

@@ -188,6 +188,17 @@ class Resource(SCIM2Model, Generic[AnyModel]):
         ]
         return schemas
 
+    def get_attribute_urn(self, field_name: str) -> Returned:
+        """Build the full URN of the attribute.
+
+        See :rfc:`RFC7644 §3.12 <7644#section-3.12>`.
+
+        .. todo:: Actually *guess* the URN instead of using the hacky `_schema` attribute.
+        """
+        main_schema = self.model_fields["schemas"].default[0]
+        alias = self.model_fields[field_name].alias or field_name
+        return f"{main_schema}:{alias}"
+
 
 AnyResource = TypeVar("AnyResource", bound="Resource")
 

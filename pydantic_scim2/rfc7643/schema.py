@@ -11,6 +11,8 @@ from .resource import Meta
 
 
 class Attribute(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:Schema.attributes"
+
     class Type(str, Enum):
         string = "string"
         boolean = "boolean"

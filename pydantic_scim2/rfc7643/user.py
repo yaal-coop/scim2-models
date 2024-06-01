@@ -15,6 +15,8 @@ from .resource import Resource
 
 
 class Name(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.name"
+
     formatted: Optional[str] = None
     """The full name, including all middle names, titles, and suffixes as
     appropriate, formatted for display (e.g., 'Ms. Barbara J Jensen, III')."""
@@ -41,6 +43,8 @@ class Name(SCIM2Model):
 
 
 class Email(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.emails"
+
     class Type(str, Enum):
         work = "work"
         home = "home"
@@ -62,6 +66,8 @@ class Email(SCIM2Model):
 
 
 class PhoneNumber(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.phoneNumbers"
+
     class Type(str, Enum):
         work = "work"
         home = "home"
@@ -87,6 +93,8 @@ class PhoneNumber(SCIM2Model):
 
 
 class Im(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.ims"
+
     class Type(str, Enum):
         aim = "aim"
         gtalk = "gtalk"
@@ -113,6 +121,8 @@ class Im(SCIM2Model):
 
 
 class Photo(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.photos"
+
     class Type(str, Enum):
         photo = "photo"
         thumbnail = "thumbnail"
@@ -133,6 +143,8 @@ class Photo(SCIM2Model):
 
 
 class Address(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.addresses"
+
     class Type(str, Enum):
         work = "work"
         home = "home"
@@ -170,6 +182,8 @@ class Address(SCIM2Model):
 
 
 class Entitlement(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.entitlements"
+
     value: Optional[str] = None
     """The value of an entitlement."""
 
@@ -185,6 +199,8 @@ class Entitlement(SCIM2Model):
 
 
 class Role(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.roles"
+
     value: Optional[str] = None
     """The value of a role."""
 
@@ -200,6 +216,8 @@ class Role(SCIM2Model):
 
 
 class X509Certificate(SCIM2Model):
+    _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.x509Certificates"
+
     value: Optional[str] = None
     """The value of an X.509 certificate."""
 
@@ -215,6 +233,8 @@ class X509Certificate(SCIM2Model):
 
 
 class User(Resource):
+    schemas: List[str] = ["urn:ietf:params:scim:schemas:core:2.0:User"]
+
     user_name: Annotated[Optional[str], Uniqueness.server, Required.true] = None
     """Unique identifier for the User, typically used by the user to directly
     authenticate to the service provider."""
@@ -293,5 +313,3 @@ class User(Resource):
 
     x509_certificates: Optional[List[X509Certificate]] = None
     """A list of certificates issued to the User."""
-
-    schemas: List[str] = ["urn:ietf:params:scim:schemas:core:2.0:User"]

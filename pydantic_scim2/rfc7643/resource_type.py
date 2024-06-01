@@ -12,6 +12,10 @@ from .resource import Resource
 
 
 class SchemaExtension(SCIM2Model):
+    _attribute_urn: str = (
+        "urn:ietf:params:scim:schemas:core:2.0:ResourceType.schemaExtensions"
+    )
+
     schema_: Annotated[AnyUrl, Mutability.read_only, Required.true] = Field(
         ..., alias="schema"
     )
