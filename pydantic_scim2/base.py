@@ -28,19 +28,15 @@ from pydantic_scim2.attributes import contains_attribute_or_subattributes
 from pydantic_scim2.attributes import validate_attribute_urn
 
 
-class SCIM2AttributeURN(str):
-    pass
-
-
-class SCIM2Context(Enum):
+class Context(Enum):
     """Represent the different HTTP contexts detailed in :rfc:`RFC7644 §3.2
     <7644#section-3.2>`
 
     Contexts are intented to be used during model validation and serialization.
     For instance a client preparing a resource creation POST request can use
-    :code:`resource.model_dump(SCIM2Context.RESOURCE_CREATION_REQUEST)` and
+    :code:`resource.model_dump(Context.RESOURCE_CREATION_REQUEST)` and
     the server can then validate it with
-    :code:`resource.model_validate(SCIM2Context.RESOURCE_CREATION_REQUEST)`.
+    :code:`resource.model_validate(Context.RESOURCE_CREATION_REQUEST)`.
     """
 
     DEFAULT = auto()
@@ -51,16 +47,105 @@ class SCIM2Context(Enum):
     """
 
     RESOURCE_CREATION_REQUEST = auto()
+    """The resource creation request context.
+
+    Should be used for clients building a payload for a resource creation request,
+    and servers validating resource creation request payloads.
+
+    - When used for serialization, it will not dump attributes annotated with :attr:`~pydantic_scim2.Mutability.read_only`.
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Mutability.read_only`.
+    """
+
     RESOURCE_CREATION_RESPONSE = auto()
+    """The resource creation response context.
+
+    Should be used for servers building a payload for a resource
+    creation response, and clients validating resource creation response
+    payloads.
+
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Returned.never` or when attributes annotated with :attr:`~pydantic_scim2.Returned.always` are missing or :data:`None`;
+    - When used for serialization, it will:
+        - always dump attributes annotated with :attr:`~pydantic_scim2.Returned.always`;
+        - never dump attributes annotated with :attr:`~pydantic_scim2.Returned.never`;
+        - dump attributes annotated with :attr:`~pydantic_scim2.Returned.default` unless they are explicitly excluded;
+        - not dump attributes annotated with :attr:`~pydantic_scim2.Returned.request` unless they are explicitly included.
+    """
+
     RESOURCE_QUERY_REQUEST = auto()
+    """The resource query request context.
+
+    Should be used for clients building a payload for a resource query request,
+    and servers validating resource query request payloads.
+
+    - When used for serialization, it will not dump attributes annotated with :attr:`~pydantic_scim2.Mutability.write_only`.
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Mutability.write_only`.
+    """
+
     RESOURCE_QUERY_RESPONSE = auto()
+    """The resource query response context.
+
+    Should be used for servers building a payload for a resource query
+    response, and clients validating resource query response payloads.
+
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Returned.never` or when attributes annotated with :attr:`~pydantic_scim2.Returned.always` are missing or :data:`None`;
+    - When used for serialization, it will:
+        - always dump attributes annotated with :attr:`~pydantic_scim2.Returned.always`;
+        - never dump attributes annotated with :attr:`~pydantic_scim2.Returned.never`;
+        - dump attributes annotated with :attr:`~pydantic_scim2.Returned.default` unless they are explicitly excluded;
+        - not dump attributes annotated with :attr:`~pydantic_scim2.Returned.request` unless they are explicitly included.
+    """
+
     RESOURCE_REPLACEMENT_REQUEST = auto()
+    """The resource replacement request context.
+
+    Should be used for clients building a payload for a resource replacement request,
+    and servers validating resource replacement request payloads.
+
+    - When used for serialization, it will not dump attributes annotated with :attr:`~pydantic_scim2.Mutability.read_only` and :attr:`~pydantic_scim2.Mutability.immutable`.
+    - When used for validation, it will ignore attributes annotated with :attr:`pydantic_scim2.Mutability.read_only` and raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Mutability.immutable`.
+    """
+
     RESOURCE_REPLACEMENT_RESPONSE = auto()
+    """The resource replacement response context.
+
+    Should be used for servers building a payload for a resource
+    replacement response, and clients validating resource query
+    replacement payloads.
+
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Returned.never` or when attributes annotated with :attr:`~pydantic_scim2.Returned.always` are missing or :data:`None`;
+    - When used for serialization, it will:
+        - always dump attributes annotated with :attr:`~pydantic_scim2.Returned.always`;
+        - never dump attributes annotated with :attr:`~pydantic_scim2.Returned.never`;
+        - dump attributes annotated with :attr:`~pydantic_scim2.Returned.default` unless they are explicitly excluded;
+        - not dump attributes annotated with :attr:`~pydantic_scim2.Returned.request` unless they are explicitly included.
+    """
+
     SEARCH_REQUEST = auto()
+    """The search request context.
+
+    Should be used for clients building a payload for a search request,
+    and servers validating search request payloads.
+
+    - When used for serialization, it will not dump attributes annotated with :attr:`~pydantic_scim2.Mutability.write_only`.
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Mutability.write_only`.
+    """
+
     SEARCH_RESPONSE = auto()
+    """The resource query response context.
+
+    Should be used for servers building a payload for a search response,
+    and clients validating resource search payloads.
+
+    - When used for validation, it will raise a :class:`~pydantic.ValidationError` when finding attributes annotated with :attr:`~pydantic_scim2.Returned.never` or when attributes annotated with :attr:`~pydantic_scim2.Returned.always` are missing or :data:`None`;
+    - When used for serialization, it will:
+        - always dump attributes annotated with :attr:`~pydantic_scim2.Returned.always`;
+        - never dump attributes annotated with :attr:`~pydantic_scim2.Returned.never`;
+        - dump attributes annotated with :attr:`~pydantic_scim2.Returned.default` unless they are explicitly excluded;
+        - not dump attributes annotated with :attr:`~pydantic_scim2.Returned.request` unless they are explicitly included.
+    """
 
     @classmethod
-    def is_request(cls, ctx: "SCIM2Context") -> bool:
+    def is_request(cls, ctx: "Context") -> bool:
         return ctx in (
             cls.RESOURCE_CREATION_REQUEST,
             cls.RESOURCE_QUERY_REQUEST,
@@ -69,7 +154,7 @@ class SCIM2Context(Enum):
         )
 
     @classmethod
-    def is_response(cls, ctx: "SCIM2Context") -> bool:
+    def is_response(cls, ctx: "Context") -> bool:
         return ctx in (
             cls.RESOURCE_CREATION_RESPONSE,
             cls.RESOURCE_QUERY_RESPONSE,
@@ -230,7 +315,7 @@ class SCIM2Model(BaseModel):
         if (
             not info.context
             or not info.context.get("scim")
-            or not SCIM2Context.is_request(info.context["scim"])
+            or not Context.is_request(info.context["scim"])
         ):
             return value
 
@@ -247,26 +332,25 @@ class SCIM2Model(BaseModel):
         )
 
         if (
-            context == SCIM2Context.RESOURCE_CREATION_REQUEST
+            context == Context.RESOURCE_CREATION_REQUEST
             and mutability == Mutability.read_only
         ):
             raise exc
 
         if (
-            context
-            in (SCIM2Context.RESOURCE_QUERY_REQUEST, SCIM2Context.SEARCH_REQUEST)
+            context in (Context.RESOURCE_QUERY_REQUEST, Context.SEARCH_REQUEST)
             and mutability == Mutability.write_only
         ):
             raise exc
 
         if (
-            context == SCIM2Context.RESOURCE_REPLACEMENT_REQUEST
+            context == Context.RESOURCE_REPLACEMENT_REQUEST
             and mutability == Mutability.immutable
         ):
             raise exc
 
         if (
-            context == SCIM2Context.RESOURCE_REPLACEMENT_REQUEST
+            context == Context.RESOURCE_REPLACEMENT_REQUEST
             and mutability == Mutability.read_only
         ):
             return None
@@ -284,7 +368,7 @@ class SCIM2Model(BaseModel):
         if (
             not info.context
             or not info.context.get("scim")
-            or not SCIM2Context.is_response(info.context["scim"])
+            or not Context.is_response(info.context["scim"])
         ):
             return handler(value)
 
@@ -324,10 +408,10 @@ class SCIM2Model(BaseModel):
 
         value = handler(value)
 
-        if info.context.get("scim") and SCIM2Context.is_request(info.context["scim"]):
+        if info.context.get("scim") and Context.is_request(info.context["scim"]):
             value = self.scim_request_serializer(value, info)
 
-        if info.context.get("scim") and SCIM2Context.is_response(info.context["scim"]):
+        if info.context.get("scim") and Context.is_response(info.context["scim"]):
             value = self.scim_response_serializer(value, info)
 
         return value
@@ -340,7 +424,7 @@ class SCIM2Model(BaseModel):
         context = info.context.get("scim")
 
         if (
-            context == SCIM2Context.RESOURCE_CREATION_REQUEST
+            context == Context.RESOURCE_CREATION_REQUEST
             and mutability == Mutability.read_only
         ):
             return None
@@ -348,14 +432,14 @@ class SCIM2Model(BaseModel):
         if (
             context
             in (
-                SCIM2Context.RESOURCE_QUERY_REQUEST,
-                SCIM2Context.SEARCH_REQUEST,
+                Context.RESOURCE_QUERY_REQUEST,
+                Context.SEARCH_REQUEST,
             )
             and mutability == Mutability.write_only
         ):
             return None
 
-        if context == SCIM2Context.RESOURCE_REPLACEMENT_REQUEST and mutability in (
+        if context == Context.RESOURCE_REPLACEMENT_REQUEST and mutability in (
             Mutability.immutable,
             Mutability.read_only,
         ):
@@ -403,7 +487,7 @@ class SCIM2Model(BaseModel):
 
     @classmethod
     def model_validate(
-        cls, *args, scim_ctx: Optional[SCIM2Context] = SCIM2Context.DEFAULT, **kwargs
+        cls, *args, scim_ctx: Optional[Context] = Context.DEFAULT, **kwargs
     ) -> "SCIM2Model":
         """Validate SCIM payloads and generate model representation by using
         Pydantic :code:`BaseModel.model_validate`."""
@@ -414,7 +498,7 @@ class SCIM2Model(BaseModel):
     def model_dump(
         self,
         *args,
-        scim_ctx: Optional[SCIM2Context] = SCIM2Context.DEFAULT,
+        scim_ctx: Optional[Context] = Context.DEFAULT,
         attributes: Optional[List[str]] = None,
         excluded_attributes: Optional[List[str]] = None,
         **kwargs,

@@ -5,9 +5,9 @@ from typing import Optional
 import pytest
 from pydantic import ValidationError
 
+from pydantic_scim2.base import Context
 from pydantic_scim2.base import Mutability
 from pydantic_scim2.base import Returned
-from pydantic_scim2.base import SCIM2Context
 from pydantic_scim2.rfc7643.resource import Resource
 
 
@@ -69,7 +69,7 @@ def test_validate_default():
             "immutable": "x",
             "writeOnly": "x",
         },
-        scim_ctx=SCIM2Context.DEFAULT,
+        scim_ctx=Context.DEFAULT,
     ) == MutResource(
         schemas=["org:example:MutResource"],
         readWrite="x",
@@ -91,7 +91,7 @@ def test_validate_creation_request():
             "immutable": "x",
             "writeOnly": "x",
         },
-        scim_ctx=SCIM2Context.RESOURCE_CREATION_REQUEST,
+        scim_ctx=Context.RESOURCE_CREATION_REQUEST,
     ) == MutResource(
         schemas=["org:example:MutResource"],
         readWrite="x",
@@ -107,7 +107,7 @@ def test_validate_creation_request():
             {
                 "readOnly": "x",
             },
-            scim_ctx=SCIM2Context.RESOURCE_CREATION_REQUEST,
+            scim_ctx=Context.RESOURCE_CREATION_REQUEST,
         )
 
 
@@ -124,7 +124,7 @@ def test_validate_query_request():
             "readWrite": "x",
             "immutable": "x",
         },
-        scim_ctx=SCIM2Context.RESOURCE_QUERY_REQUEST,
+        scim_ctx=Context.RESOURCE_QUERY_REQUEST,
     ) == MutResource(
         schemas=["org:example:MutResource"],
         readOnly="x",
@@ -140,7 +140,7 @@ def test_validate_query_request():
             {
                 "writeOnly": "x",
             },
-            scim_ctx=SCIM2Context.RESOURCE_QUERY_REQUEST,
+            scim_ctx=Context.RESOURCE_QUERY_REQUEST,
         )
 
 
@@ -157,7 +157,7 @@ def test_validate_replacement_request():
             "readWrite": "x",
             "writeOnly": "x",
         },
-        scim_ctx=SCIM2Context.RESOURCE_REPLACEMENT_REQUEST,
+        scim_ctx=Context.RESOURCE_REPLACEMENT_REQUEST,
     ) == MutResource(
         schemas=["org:example:MutResource"],
         readWrite="x",
@@ -172,7 +172,7 @@ def test_validate_replacement_request():
             {
                 "immutable": "x",
             },
-            scim_ctx=SCIM2Context.RESOURCE_REPLACEMENT_REQUEST,
+            scim_ctx=Context.RESOURCE_REPLACEMENT_REQUEST,
         )
 
 
@@ -189,7 +189,7 @@ def test_validate_search_request():
             "readWrite": "x",
             "immutable": "x",
         },
-        scim_ctx=SCIM2Context.SEARCH_REQUEST,
+        scim_ctx=Context.SEARCH_REQUEST,
     ) == MutResource(
         schemas=["org:example:MutResource"],
         readOnly="x",
@@ -205,7 +205,7 @@ def test_validate_search_request():
             {
                 "writeOnly": "x",
             },
-            scim_ctx=SCIM2Context.SEARCH_REQUEST,
+            scim_ctx=Context.SEARCH_REQUEST,
         )
 
 
@@ -258,7 +258,7 @@ def test_validate_default_response():
             "defaultReturned": "x",
             "requestReturned": "x",
         },
-        scim_ctx=SCIM2Context.DEFAULT,
+        scim_ctx=Context.DEFAULT,
     ) == RetResource(
         schemas=["org:example:RetResource"],
         id="id",
@@ -272,10 +272,10 @@ def test_validate_default_response():
 @pytest.mark.parametrize(
     "context",
     [
-        SCIM2Context.RESOURCE_CREATION_RESPONSE,
-        SCIM2Context.RESOURCE_QUERY_RESPONSE,
-        SCIM2Context.RESOURCE_REPLACEMENT_RESPONSE,
-        SCIM2Context.SEARCH_RESPONSE,
+        Context.RESOURCE_CREATION_RESPONSE,
+        Context.RESOURCE_QUERY_RESPONSE,
+        Context.RESOURCE_REPLACEMENT_RESPONSE,
+        Context.SEARCH_RESPONSE,
     ],
 )
 def test_validate_response(context):

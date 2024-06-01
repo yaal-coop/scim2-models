@@ -4,9 +4,9 @@ from typing import Optional
 
 import pytest
 
+from pydantic_scim2.base import Context
 from pydantic_scim2.base import Mutability
 from pydantic_scim2.base import Returned
-from pydantic_scim2.base import SCIM2Context
 from pydantic_scim2.base import SCIM2Model
 from pydantic_scim2.rfc7643.resource import Resource
 
@@ -80,7 +80,7 @@ def test_dump_default(mut_resource):
         "writeOnly": "x",
     }
 
-    assert mut_resource.model_dump(scim_ctx=SCIM2Context.DEFAULT) == {
+    assert mut_resource.model_dump(scim_ctx=Context.DEFAULT) == {
         "schemas": ["org:example:MutResource"],
         "id": "id",
         "readOnly": "x",
@@ -108,7 +108,7 @@ def test_dump_creation_request(mut_resource):
     - Mutability.write_only are dumped
     - Mutability.read_only are not dumped
     """
-    assert mut_resource.model_dump(scim_ctx=SCIM2Context.RESOURCE_CREATION_REQUEST) == {
+    assert mut_resource.model_dump(scim_ctx=Context.RESOURCE_CREATION_REQUEST) == {
         "schemas": ["org:example:MutResource"],
         "readWrite": "x",
         "immutable": "x",
@@ -126,7 +126,7 @@ def test_dump_query_request(mut_resource):
     - Mutability.read_only are dumped
     """
 
-    assert mut_resource.model_dump(scim_ctx=SCIM2Context.RESOURCE_QUERY_REQUEST) == {
+    assert mut_resource.model_dump(scim_ctx=Context.RESOURCE_QUERY_REQUEST) == {
         "schemas": ["org:example:MutResource"],
         "id": "id",
         "readOnly": "x",
@@ -144,9 +144,7 @@ def test_dump_replacement_request(mut_resource):
     - Mutability.write_only are dumped
     - Mutability.read_only are not dumped"""
 
-    assert mut_resource.model_dump(
-        scim_ctx=SCIM2Context.RESOURCE_REPLACEMENT_REQUEST
-    ) == {
+    assert mut_resource.model_dump(scim_ctx=Context.RESOURCE_REPLACEMENT_REQUEST) == {
         "schemas": ["org:example:MutResource"],
         "readWrite": "x",
         "writeOnly": "x",
@@ -163,7 +161,7 @@ def test_dump_search_request(mut_resource):
     - Mutability.read_only are dumped
     """
 
-    assert mut_resource.model_dump(scim_ctx=SCIM2Context.RESOURCE_QUERY_REQUEST) == {
+    assert mut_resource.model_dump(scim_ctx=Context.RESOURCE_QUERY_REQUEST) == {
         "schemas": ["org:example:MutResource"],
         "id": "id",
         "readOnly": "x",
@@ -194,10 +192,10 @@ def test_dump_default_response(ret_resource):
 @pytest.mark.parametrize(
     "context",
     [
-        SCIM2Context.RESOURCE_CREATION_RESPONSE,
-        SCIM2Context.RESOURCE_QUERY_RESPONSE,
-        SCIM2Context.RESOURCE_REPLACEMENT_RESPONSE,
-        SCIM2Context.SEARCH_RESPONSE,
+        Context.RESOURCE_CREATION_RESPONSE,
+        Context.RESOURCE_QUERY_RESPONSE,
+        Context.RESOURCE_REPLACEMENT_RESPONSE,
+        Context.SEARCH_RESPONSE,
     ],
 )
 def test_dump_response(context, ret_resource):
