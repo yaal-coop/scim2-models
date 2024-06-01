@@ -527,4 +527,9 @@ class BaseModel(BaseModel):
         return super().model_dump(*args, **kwargs)
 
 
+class ComplexAttribute(BaseModel):
+    """A complex attribute as defined in :rfc:`RFC7643 §2.3.8
+    <7643#section-2.3.8>`."""
+
+
 AnyModel = TypeVar("AnyModel", bound=BaseModel)

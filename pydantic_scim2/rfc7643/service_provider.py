@@ -5,18 +5,18 @@ from typing import Optional
 
 from pydantic import AnyUrl
 
-from ..base import BaseModel
+from ..base import ComplexAttribute
 from ..base import Mutability
 from ..base import Required
 from .resource import Resource
 
 
-class Patch(BaseModel):
+class Patch(ComplexAttribute):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class Bulk(BaseModel):
+class Bulk(ComplexAttribute):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
@@ -27,7 +27,7 @@ class Bulk(BaseModel):
     """An integer value specifying the maximum payload size in bytes."""
 
 
-class Filter(BaseModel):
+class Filter(ComplexAttribute):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
@@ -35,22 +35,22 @@ class Filter(BaseModel):
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class ChangePassword(BaseModel):
+class ChangePassword(ComplexAttribute):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class Sort(BaseModel):
+class Sort(ComplexAttribute):
     supported: Annotated[bool, Mutability.read_only, Required.true]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class ETag(BaseModel):
+class ETag(ComplexAttribute):
     supported: Annotated[bool, Mutability.read_only]
     """A Boolean value specifying whether or not the operation is supported."""
 
 
-class AuthenticationScheme(BaseModel):
+class AuthenticationScheme(ComplexAttribute):
     class Type(str, Enum):
         oauth = "oauth"
         oauth2 = "oauth2"

@@ -273,23 +273,27 @@ Custom models
 =============
 
 You can write your own model and use it the same way than the other pydantic-scim2 models.
-Just inherit from :class:`~pydantic_scim2.Resource`:
+Just inherit from :class:`~pydantic_scim2.Resource` for your main resource,
+and from :class:`~pydantic_scim2.ComplexAttribute` for the complex attributes:
 
 .. code-block:: python
 
     >>> from typing import Annotated, Optional
-    >>> from pydantic_scim2 import Resource, Returned, Mutability
+    >>> from pydantic_scim2 import Resource, Returned, Mutability, ComplexAttribute
     >>> from enum import Enum
 
-    >>> class Pet(Resource):
-    ...     class Type(str, Enum):
-    ...         dog = "dog"
-    ...         cat = "cat"
+    >>> class PetType(ComplexAttribute):
+    ...     type: Optional[str]
+    ...     """The pet type like 'cat' or 'dog'."""
     ...
+    ...     color: Optional[str]
+    ...     """The pet color."""
+
+    >>> class Pet(Resource):
     ...     name : Annotated[Optional[str], Mutability.immutable, Returned.always]
     ...     """The name of the pet."""
     ...
-    ...     type: Optional[Type]
+    ...     pet_type: Optional[PetType]
     ...     """The pet type."""
 
 You can annotate fields to indicate their :class:`~pydantic_scim2.Mutability` and :class:`~pydantic_scim2.Returned`.

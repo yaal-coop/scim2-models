@@ -19,13 +19,13 @@ from pydantic import model_validator
 from typing_extensions import Self
 
 from ..base import AnyModel
-from ..base import BaseModel
+from ..base import ComplexAttribute
 from ..base import Mutability
 from ..base import Returned
 from ..base import Uniqueness
 
 
-class Meta(BaseModel):
+class Meta(ComplexAttribute):
     """All "meta" sub-attributes are assigned by the service provider (have a
     "mutability" of "readOnly"), and all of these sub-attributes have a
     "returned" characteristic of "default".
@@ -80,7 +80,7 @@ class Meta(BaseModel):
     """
 
 
-class Resource(BaseModel, Generic[AnyModel]):
+class Resource(ComplexAttribute, Generic[AnyModel]):
     model_config = ConfigDict(extra="allow")
 
     schemas: List[str]
@@ -112,14 +112,14 @@ class Resource(BaseModel, Generic[AnyModel]):
     """A complex attribute containing resource metadata."""
 
     def __getitem__(self, item: Any):
-        if not isinstance(item, type) or not issubclass(item, BaseModel):
+        if not isinstance(item, type) or not issubclass(item, ComplexAttribute):
             raise KeyError(f"{item} is not a valid extension type")
 
         schema = item.model_fields["schemas"].default[0]
         return getattr(self, schema)
 
     def __setitem__(self, item: Any, value: "Resource"):
-        if not isinstance(item, type) or not issubclass(item, BaseModel):
+        if not isinstance(item, type) or not issubclass(item, ComplexAttribute):
             raise KeyError(f"{item} is not a valid extension type")
 
         schema = item.model_fields["schemas"].default[0]

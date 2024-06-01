@@ -5,12 +5,12 @@ from typing import Optional
 from pydantic import AnyUrl
 from pydantic import Field
 
-from ..base import BaseModel
+from ..base import ComplexAttribute
 from ..base import Mutability
 from .resource import Resource
 
 
-class GroupMember(BaseModel):
+class GroupMember(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:Group.members"
 
     value: Annotated[Optional[str], Mutability.immutable] = None

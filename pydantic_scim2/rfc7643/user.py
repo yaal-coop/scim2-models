@@ -6,7 +6,7 @@ from typing import Optional
 from pydantic import AnyUrl
 from pydantic import EmailStr
 
-from ..base import BaseModel
+from ..base import ComplexAttribute
 from ..base import Mutability
 from ..base import Required
 from ..base import Uniqueness
@@ -14,7 +14,7 @@ from .group import GroupMember
 from .resource import Resource
 
 
-class Name(BaseModel):
+class Name(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.name"
 
     formatted: Optional[str] = None
@@ -42,7 +42,7 @@ class Name(BaseModel):
     languages (e.g., 'III' given the full name 'Ms. Barbara J Jensen, III')."""
 
 
-class Email(BaseModel):
+class Email(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.emails"
 
     class Type(str, Enum):
@@ -65,7 +65,7 @@ class Email(BaseModel):
     address."""
 
 
-class PhoneNumber(BaseModel):
+class PhoneNumber(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.phoneNumbers"
 
     class Type(str, Enum):
@@ -92,7 +92,7 @@ class PhoneNumber(BaseModel):
     number."""
 
 
-class Im(BaseModel):
+class Im(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.ims"
 
     class Type(str, Enum):
@@ -120,7 +120,7 @@ class Im(BaseModel):
     for this attribute, e.g., the preferred messenger or primary messenger."""
 
 
-class Photo(BaseModel):
+class Photo(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.photos"
 
     class Type(str, Enum):
@@ -142,7 +142,7 @@ class Photo(BaseModel):
     for this attribute, e.g., the preferred photo or thumbnail."""
 
 
-class Address(BaseModel):
+class Address(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.addresses"
 
     class Type(str, Enum):
@@ -181,7 +181,7 @@ class Address(BaseModel):
     for this attribute, e.g., the preferred photo or thumbnail."""
 
 
-class Entitlement(BaseModel):
+class Entitlement(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.entitlements"
 
     value: Optional[str] = None
@@ -198,7 +198,7 @@ class Entitlement(BaseModel):
     for this attribute."""
 
 
-class Role(BaseModel):
+class Role(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.roles"
 
     value: Optional[str] = None
@@ -215,7 +215,7 @@ class Role(BaseModel):
     for this attribute."""
 
 
-class X509Certificate(BaseModel):
+class X509Certificate(ComplexAttribute):
     _attribute_urn: str = "urn:ietf:params:scim:schemas:core:2.0:User.x509Certificates"
 
     value: Optional[str] = None

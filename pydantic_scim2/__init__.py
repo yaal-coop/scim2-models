@@ -1,4 +1,4 @@
-from .base import BaseModel
+from .base import ComplexAttribute
 from .base import Context
 from .base import Mutability
 from .base import Required
@@ -64,6 +64,8 @@ __all__ = [
     "BulkRequest",
     "BulkResponse",
     "ChangePassword",
+    "ComplexAttribute",
+    "Context",
     "ETag",
     "Email",
     "EnterpriseUser",
@@ -96,8 +98,6 @@ __all__ = [
     "ResourceType",
     "Returned",
     "Role",
-    "Context",
-    "BaseModel",
     "Schema",
     "SchemaExtension",
     "SearchRequest",
