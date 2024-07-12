@@ -26,6 +26,12 @@ class PatchOperation(ComplexAttribute):
 
     value: Optional[Any] = None
 
+    @model_validator(mode='before')
+    @classmethod
+    def normalize_op(cls, values):
+        if 'op' in values and isinstance(values['op'], str):
+            values['op'] = values['op'].lower()
+        return values
 
 class PatchOp(Message):
     schemas: List[str] = ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
