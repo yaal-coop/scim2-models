@@ -3,7 +3,7 @@ from typing import Any
 from typing import List
 from typing import Optional
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from ..base import ComplexAttribute
 from .message import Message
@@ -26,12 +26,12 @@ class PatchOperation(ComplexAttribute):
 
     value: Optional[Any] = None
 
-    @model_validator(mode='before')
+    @field_validator('op',mode='before')
     @classmethod
-    def normalize_op(cls, values):
-        if 'op' in values and isinstance(values['op'], str):
-            values['op'] = values['op'].lower()
-        return values
+    def normalize_op(cls, v):
+        if isinstance(v, str):
+            return v.lower()
+        return v
 
 class PatchOp(Message):
     """Patch Operation as defined in :rfc:`RFC7644 §3.5.2

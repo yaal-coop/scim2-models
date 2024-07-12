@@ -5,6 +5,7 @@ from typing import Optional
 import pytest
 from pydantic import ValidationError
 
+from scim2_models import PatchOp, PatchOperation
 from scim2_models.base import Context
 from scim2_models.base import Mutability
 from scim2_models.base import Required
@@ -467,4 +468,30 @@ def test_validate_query_and_search_request_necessity(context):
         schemas=["org:example:ReqResource"],
         id="x",
         optional="x",
+    )
+
+@pytest.mark.parametrize(
+    "context",
+    [
+        Context.RESOURCE_REPLACEMENT_REQUEST,
+    ],
+)
+def test_validate_patchop_case_insensitivith(context):
+    """Validate that a patch operation's Op declaration is case-insensitive
+    """
+    assert PatchOp.model_validate(
+        {
+            "operations": [
+                {"op":"Replace","path":"userName","value":"Rivard"},
+                {"op": "ADD", "path": "userName", "value": "Rivard"},
+                {"op": "ReMove", "path": "userName", "value": "Rivard"}
+            ],
+        },
+        scim_ctx=context,
+    ) == PatchOp(
+        operations=[
+            PatchOperation(op=PatchOperation.Op.replace,path="userName",value="Rivard"),
+            PatchOperation(op=PatchOperation.Op.add, path="userName", value="Rivard"),
+            PatchOperation(op=PatchOperation.Op.remove, path="userName", value="Rivard")
+        ]
     )
