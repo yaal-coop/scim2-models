@@ -15,11 +15,8 @@ from typing import get_origin
 from pydantic import Discriminator
 from pydantic import Field
 from pydantic import Tag
-from pydantic import ValidationInfo
-from pydantic import ValidatorFunctionWrapHandler
+from pydantic import WrapSerializer
 from pydantic import field_serializer
-from pydantic import model_validator
-from typing_extensions import Self
 
 from ..base import AnyModel
 from ..base import BaseModel
@@ -90,9 +87,25 @@ class Meta(ComplexAttribute):
     """
 
 
+def extension_serializer(value: Any, handler, info) -> Dict[str, Any]:
+    """Exclude the Resource attributes from the extension dump.
+
+    For instance, attributes 'meta', 'id' or 'schemas' should not be
+    dumped when the model is used as an extension for another model.
+    """
+
+    partial_result = handler(value, info)
+    result = {
+        attr_name: value
+        for attr_name, value in partial_result.items()
+        if attr_name not in Resource.model_fields
+    }
+    return result or None
+
+
 class ResourceMetaclass(type(BaseModel)):
     def __new__(cls, name, bases, attrs, **kwargs):
-        """Add a dynamic field for each extension."""
+        """Dynamically add a field for each extension."""
 
         if "__pydantic_generic_metadata__" in kwargs:
             extensions = kwargs["__pydantic_generic_metadata__"]["args"][0]
@@ -103,8 +116,10 @@ class ResourceMetaclass(type(BaseModel)):
             )
             for extension in extensions:
                 schema = extension.model_fields["schemas"].default[0]
-                attrs.setdefault("__annotations__", {})[extension.__name__] = Optional[
-                    extension
+                attrs.setdefault("__annotations__", {})[extension.__name__] = Annotated[
+                    Optional[extension],
+                    Returned.always,
+                    WrapSerializer(extension_serializer),
                 ]
                 attrs[extension.__name__] = Field(
                     None,
@@ -216,22 +231,6 @@ class Resource(BaseModel, Generic[AnyModel], metaclass=ResourceMetaclass):
             schema for schema in extension_schemas if schema not in self.schemas
         ]
         return schemas
-
-    @model_validator(mode="wrap")
-    @classmethod
-    def attribute_urn_marker(
-        cls, value: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
-    ) -> Self:
-        """Navigate through attributes and sub-attributes of type
-        ComplexAttribute, and mark them with a '_schema' attribute.
-
-        '_schema' will later be used by 'get_attribute_urn'.
-        """
-
-        obj = handler(value)
-        obj.mark_with_schema()
-
-        return obj
 
     @classmethod
     def to_schema(cls):
@@ -353,10 +352,19 @@ def tagged_resource_union(resource_types: Resource):
         return resource_types
 
     def get_schema_from_payload(payload: Any):
-        try:
-            return payload["schemas"][0]
-        except KeyError:
+        if not payload:
             return None
+
+        resource_types_schemas = [
+            resource_type.model_fields["schemas"].default[0]
+            for resource_type in resource_types
+        ]
+        common_schemas = [
+            schema
+            for schema in payload.get("schemas")
+            if schema in resource_types_schemas
+        ]
+        return common_schemas[0] if common_schemas else None
 
     def get_tag(resource_type: Type):
         return Tag(resource_type.model_fields["schemas"].default[0])

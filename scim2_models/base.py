@@ -436,16 +436,16 @@ class BaseModel(BaseModel):
         transformed in lowercase so any case is handled the same way.
         """
 
-        def lowerize_value(value: Any) -> Any:
+        def normalize_value(value: Any) -> Any:
             if isinstance(value, dict):
                 return {
-                    normalize_attribute_name(k): lowerize_value(v)
+                    normalize_attribute_name(k): normalize_value(v)
                     for k, v in value.items()
                 }
             return value
 
-        lowerized_value = lowerize_value(value)
-        return handler(lowerized_value)
+        normalized_value = normalize_value(value)
+        return handler(normalized_value)
 
     @model_validator(mode="wrap")
     @classmethod
@@ -540,6 +540,9 @@ class BaseModel(BaseModel):
             if not is_complex_attribute(attr_type):
                 continue
 
+            if "schemas" not in self.model_fields:
+                continue
+
             main_schema = self.model_fields["schemas"].default[0]
 
             separator = ":" if isinstance(self, Resource) else "."
@@ -604,8 +607,8 @@ class BaseModel(BaseModel):
         return value
 
     def scim_response_serializer(self, value: Any, info: SerializationInfo) -> Any:
-        """Serialize the fields according to returability indications passed in
-        the serialization context."""
+        """Serialize the fields according to returnability indications passed
+        in the serialization context."""
 
         returnability = self.get_field_annotation(info.field_name, Returned)
         attribute_urn = self.get_attribute_urn(info.field_name)
@@ -642,6 +645,7 @@ class BaseModel(BaseModel):
         """Remove `None` values inserted by the
         :meth:`~scim2_models.base.BaseModel.scim_serializer`."""
 
+        self.mark_with_schema()
         result = handler(self)
         return {key: value for key, value in result.items() if value is not None}
 

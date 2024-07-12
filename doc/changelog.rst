@@ -1,9 +1,15 @@
 Changelog
 =========
 
+[0.1.12] - 2024-07-11
+---------------------
+
 Fixed
 ^^^^^
 - Additional bugfixes about attribute case sensitivity #45
+- Dump was broken after sub-model assignments #48
+- Extension attributes dump were ignored #49
+- :class:`~scim2_models.ListResponse` tolerate any schema order #50
 
 [0.1.11] - 2024-07-02
 ---------------------
@@ -70,7 +76,7 @@ Added
 
 Changed
 ^^^^^^^
-- Refactor :code:`get_field_mutability` and :code:`get_field_returability` in :code:`get_field_annotation`.
+- Refactor :code:`get_field_mutability` and :code:`get_field_returnability` in :code:`get_field_annotation`.
 
 [0.1.5] - 2024-06-04
 --------------------

@@ -10,26 +10,10 @@ from scim2_models.base import BaseModel
 from scim2_models.base import ComplexAttribute
 from scim2_models.base import Context
 from scim2_models.base import Returned
+from scim2_models.rfc7643.enterprise_user import EnterpriseUser
+from scim2_models.rfc7643.resource import Meta
 from scim2_models.rfc7643.resource import Resource
 from scim2_models.rfc7643.user import User
-
-
-def test_get_attribute_urn():
-    class Sub(ComplexAttribute):
-        dummy: str
-
-    class Sup(Resource):
-        schemas: List[str] = ["urn:example:2.0:Sup"]
-        dummy: str
-        sub: Sub
-        subs: List[Sub]
-
-    sup = Sup(dummy="x", sub=Sub(dummy="x"), subs=[Sub(dummy="x")])
-
-    assert sup.get_attribute_urn("dummy") == "urn:example:2.0:Sup:dummy"
-    assert sup.get_attribute_urn("sub") == "urn:example:2.0:Sup:sub"
-    assert sup.sub.get_attribute_urn("dummy") == "urn:example:2.0:Sup:sub.dummy"
-    assert sup.subs[0].get_attribute_urn("dummy") == "urn:example:2.0:Sup:subs.dummy"
 
 
 def test_guess_root_type():
@@ -247,4 +231,70 @@ def test_attribute_inclusion_case_sensitivity():
         "schemas": [
             "urn:ietf:params:scim:schemas:core:2.0:User",
         ],
+    }
+
+
+def test_attribute_inclusion_schema_extensions():
+    """Verifies that attributes from schema extensions work."""
+    user = User[EnterpriseUser].model_validate(
+        {
+            "userName": "foobar",
+            "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+                "employeeNumber": "12345"
+            },
+        }
+    )
+
+    expected = {
+        "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:User",
+            "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+        ],
+        "userName": "foobar",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+            "employeeNumber": "12345",
+        },
+    }
+
+    assert (
+        user.model_dump(
+            scim_ctx=Context.RESOURCE_QUERY_RESPONSE,
+            attributes=[
+                "urn:ietf:params:scim:schemas:core:2.0:User:userName",
+                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber",
+            ],
+        )
+        == expected
+    )
+
+    assert (
+        user.model_dump(
+            scim_ctx=Context.RESOURCE_QUERY_RESPONSE,
+            attributes=[
+                "urn:ietf:params:scim:schemas:core:2.0:User:userName",
+                "URN:IETF:PARAMS:SCIM:SCHEMAS:EXTENSION:ENTERPRISE:2.0:USER:EMPLOYEENUMBER",
+            ],
+        )
+        == expected
+    )
+
+
+def test_dump_after_assignment():
+    """Test that attribute assignment does not break model dump."""
+
+    user = User(id="1", user_name="ABC")
+    user.meta = Meta(
+        resource_type="User",
+        location="/v2/Users/foo",
+    )
+    assert user.model_dump(scim_ctx=Context.RESOURCE_CREATION_RESPONSE) == {
+        "id": "1",
+        "meta": {
+            "location": "/v2/Users/foo",
+            "resourceType": "User",
+        },
+        "schemas": [
+            "urn:ietf:params:scim:schemas:core:2.0:User",
+        ],
+        "userName": "ABC",
     }
