@@ -35,6 +35,12 @@ jobs:
           poetry --version
           poetry install
           poetry run pytest --showlocals
+      - name: Run example tests
+        if: ${{ matrix.python != '3.9' && matrix.python != '3.10' }}  # The scim-provider requires Python 3.11+
+        run: |
+          cd examples/scim-provider
+          poetry install
+          poetry run pytest --showlocals
 
   minversions:
     name: minimum dependency versions
