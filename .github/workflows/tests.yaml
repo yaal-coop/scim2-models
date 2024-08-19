@@ -24,6 +24,8 @@ jobs:
           - '3.9'
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - uses: actions/setup-python@v5
@@ -34,6 +36,12 @@ jobs:
         run: |
           poetry --version
           poetry install
+          poetry run pytest --showlocals
+      - name: Run scim2-server tests
+        if: ${{ matrix.python != '3.9' && matrix.python != '3.10' }}
+        run: |
+          cd examples/scim2-server
+          poetry install --with test
           poetry run pytest --showlocals
 
   minversions:

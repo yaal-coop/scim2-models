@@ -1,0 +1,3 @@
+[submodule "examples/scim2-server"]
+	path = examples/scim2-server
+	url = https://github.com/yaal-coop/scim2-server

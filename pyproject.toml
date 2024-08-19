@@ -49,7 +49,7 @@ source = [
     "scim2_models",
     "tests",
 ]
-omit = [".tox/*"]
+omit = [".tox/*", "examples/*"]
 branch = true
 
 [tool.coverage.report]
@@ -74,11 +74,11 @@ ignore = [
 [tool.ruff.lint.isort]
 force-single-line = true
 
-[too.ruff.format]
+[tool.ruff.format]
 docstring-code-format = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-glob='*.rst'"
+addopts = "--doctest-modules --doctest-glob='*.rst' --ignore=examples"
 doctest_optionflags= "ALLOW_UNICODE IGNORE_EXCEPTION_DETAIL ELLIPSIS"
 
 # [tool.mypy]
